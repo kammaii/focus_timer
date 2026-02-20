@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'home_controller.dart';
+import 'widgets/focus_rabbit.dart';
+import 'widgets/rest_rabbit.dart';
 import '../../core/theme/app_colors.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -10,7 +11,7 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final mainContent = Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Obx(() => Text(
@@ -111,14 +112,9 @@ class HomeView extends GetView<HomeController> {
                               duration: const Duration(milliseconds: 300),
                               height: lottieSize,
                               width: lottieSize,
-                              child: LottieBuilder.network(
-                                controller.currentState.value == TimerState.rest
-                                 ? 'https://assets2.lottiefiles.com/packages/lf20_syqnfe7c.json' // 임시 휴식 애니메이션
-                                 : 'https://assets5.lottiefiles.com/packages/lf20_w51pcehl.json', // 임시 공부 애니메이션
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) => 
-                                  Icon(Icons.pets, size: lottieSize * 0.5, color: AppColors.textLight),
-                              ),
+                              child: controller.currentState.value == TimerState.rest
+                                ? const MouthMunchRabbitV5()
+                                : const FloppyEarRabbit(),
                             )),
                             
                             SizedBox(height: spacing),
@@ -155,25 +151,28 @@ class HomeView extends GetView<HomeController> {
                                 return Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    IconButton(
-                                      onPressed: controller.isPaused.value ? controller.resumeTimer : controller.pauseTimer,
-                                      icon: Icon(controller.isPaused.value ? Icons.play_circle_fill : Icons.pause_circle_filled),
-                                      iconSize: iconSize * 0.9,
-                                      color: controller.isPaused.value ? AppColors.rest : AppColors.secondary,
+                                    ElevatedButton.icon(
+                                      onPressed: controller.addRestMinute,
+                                      icon: const Icon(Icons.add),
+                                      label: const Text("1분 추가"),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
                                     ),
                                     const SizedBox(width: 20),
-                                    IconButton(
+                                    ElevatedButton.icon(
                                       onPressed: controller.skipRest,
                                       icon: const Icon(Icons.skip_next),
-                                      iconSize: iconSize * 0.9,
-                                      color: AppColors.textLight,
-                                    ),
-                                    const SizedBox(width: 20),
-                                    IconButton(
-                                      onPressed: controller.stopTimer,
-                                      icon: const Icon(Icons.stop_circle),
-                                      iconSize: iconSize * 0.9,
-                                      color: AppColors.error,
+                                      label: const Text("휴식 스킵"),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.secondary,
+                                        foregroundColor: AppColors.text,
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
                                     ),
                                   ],
                                 );
@@ -184,7 +183,7 @@ class HomeView extends GetView<HomeController> {
                             Obx(() => controller.currentState.value != TimerState.idle 
                               ? Text("현재 ${controller.currentCycle.value} / ${controller.settings.repeatCount.value} 사이클 진행 중",
                                   style: const TextStyle(color: AppColors.textLight, fontWeight: FontWeight.bold))
-                              : const SizedBox.shrink()
+                              : const SizedBox.shrink(),
                             ),
                           ],
                         ),
@@ -197,6 +196,58 @@ class HomeView extends GetView<HomeController> {
           ],
         ),
       ),
+    );
+
+    return Stack(
+      children: [
+        Listener(
+          onPointerDown: (_) => controller.resetAmbientTimer(),
+          behavior: HitTestBehavior.translucent,
+          child: mainContent,
+        ),
+        Obx(() {
+          if (controller.isAmbientMode.value) {
+            return Positioned.fill(
+              child: GestureDetector(
+                onTap: controller.resetAmbientTimer,
+                child: Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          controller.formattedTime,
+                          style: const TextStyle(
+                            fontSize: 100,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                        ColorFiltered(
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF222222), BlendMode.srcATop),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            height: 200,
+                            width: 200,
+                            child: controller.currentState.value == TimerState.rest
+                              ? const MouthMunchRabbitV5()
+                              : const FloppyEarRabbit(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+      ],
     );
   }
 }

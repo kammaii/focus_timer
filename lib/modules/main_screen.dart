@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'home/home_view.dart';
+import 'home/home_controller.dart';
 import 'records/records_view.dart';
 import 'settings/settings_view.dart';
 import '../core/theme/app_colors.dart';
@@ -31,29 +32,38 @@ class MainScreen extends StatelessWidget {
         index: controller.currentIndex.value,
         children: pages,
       )),
-      bottomNavigationBar: Obx(() => BottomNavigationBar(
-        currentIndex: controller.currentIndex.value,
-        onTap: controller.changePage,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textLight,
-        backgroundColor: Colors.white,
-        elevation: 10,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.timer),
-            label: '타이머',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: '기록',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '설정',
-          ),
-        ],
-      )),
+      bottomNavigationBar: Obx(() {
+        bool isAmbient = false;
+        if (Get.isRegistered<HomeController>()) {
+          isAmbient = Get.find<HomeController>().isAmbientMode.value;
+        }
+        
+        if (isAmbient) return const SizedBox.shrink();
+
+        return BottomNavigationBar(
+          currentIndex: controller.currentIndex.value,
+          onTap: controller.changePage,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textLight,
+          backgroundColor: Colors.white,
+          elevation: 10,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.timer),
+              label: '타이머',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: '기록',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: '설정',
+            ),
+          ],
+        );
+      }),
     );
   }
 }

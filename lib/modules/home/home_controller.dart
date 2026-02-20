@@ -1,11 +1,13 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../settings/settings_controller.dart';
 import '../records/records_controller.dart';
 
 enum TimerState { idle, focus, rest }
 
-class HomeController extends GetxController {
+class HomeController extends GetxController with WidgetsBindingObserver {
   final SettingsController settings;
   final RecordsController records;
 
@@ -17,7 +19,15 @@ class HomeController extends GetxController {
   var selectedCategory = "".obs;
   var currentCycle = 1.obs;
   
+  // Ambient Mode
+  var isAmbientMode = false.obs;
+  Timer? _ambientTimer;
+
   Timer? _timer;
+  
+  // Background tracking
+  DateTime? _pausedTime;
+  int _pausedRemainingSeconds = 0;
 
   int get totalSeconds {
     if (currentState.value == TimerState.rest) return settings.restMinutes.value * 60;
@@ -32,6 +42,8 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
+    
     // Default config update trigger
     ever(settings.focusMinutes, (_) => _resetTimer());
     _resetTimer();
@@ -43,6 +55,16 @@ class HomeController extends GetxController {
     ever(settings.categories, (List<String> cats) {
       if (cats.isNotEmpty && !cats.contains(selectedCategory.value)) {
         selectedCategory.value = cats.first;
+      }
+    });
+
+    ever(settings.ambientModeEnabled, (bool enabled) {
+      if (!enabled) {
+        isAmbientMode.value = false;
+        _ambientTimer?.cancel();
+        WakelockPlus.disable();
+      } else if (currentState.value != TimerState.idle && !isPaused.value) {
+        resetAmbientTimer();
       }
     });
   }
@@ -61,6 +83,7 @@ class HomeController extends GetxController {
     isPaused.value = false;
     remainingSeconds.value = settings.focusMinutes.value * 60;
     _startCountdown();
+    resetAmbientTimer();
   }
 
   void startRest() {
@@ -68,6 +91,7 @@ class HomeController extends GetxController {
     isPaused.value = false;
     remainingSeconds.value = settings.restMinutes.value * 60;
     _startCountdown();
+    resetAmbientTimer();
   }
 
   void _startCountdown() {
@@ -98,6 +122,7 @@ class HomeController extends GetxController {
       currentCycle.value++;
       startFocus();
     }
+    resetAmbientTimer();
   }
 
   void stopTimer() {
@@ -106,12 +131,18 @@ class HomeController extends GetxController {
     isPaused.value = false;
     currentCycle.value = 1;
     _resetTimer();
+    isAmbientMode.value = false;
+    _ambientTimer?.cancel();
+    WakelockPlus.disable();
   }
   
   void pauseTimer() {
     if (currentState.value != TimerState.idle && !isPaused.value) {
       isPaused.value = true;
       _timer?.cancel();
+      isAmbientMode.value = false;
+      _ambientTimer?.cancel();
+      WakelockPlus.disable();
     }
   }
 
@@ -119,6 +150,7 @@ class HomeController extends GetxController {
     if (currentState.value != TimerState.idle && isPaused.value) {
       isPaused.value = false;
       _startCountdown();
+      resetAmbientTimer();
     }
   }
   
@@ -133,6 +165,21 @@ class HomeController extends GetxController {
   void addRestMinute() {
     if (currentState.value == TimerState.rest) {
       remainingSeconds.value += 60;
+      resetAmbientTimer();
+    }
+  }
+
+  void resetAmbientTimer() {
+    isAmbientMode.value = false;
+    _ambientTimer?.cancel();
+    
+    if (settings.ambientModeEnabled.value && currentState.value != TimerState.idle && !isPaused.value) {
+      WakelockPlus.enable();
+      _ambientTimer = Timer(const Duration(minutes: 1), () {
+        isAmbientMode.value = true;
+      });
+    } else {
+      WakelockPlus.disable();
     }
   }
 
@@ -143,8 +190,35 @@ class HomeController extends GetxController {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _pausedTime = DateTime.now();
+      _pausedRemainingSeconds = remainingSeconds.value;
+    } else if (state == AppLifecycleState.resumed) {
+      if (_pausedTime != null && currentState.value != TimerState.idle && !isPaused.value) {
+        final elapsed = DateTime.now().difference(_pausedTime!).inSeconds;
+        int newRemaining = _pausedRemainingSeconds - elapsed;
+        if (newRemaining <= 0) {
+          remainingSeconds.value = 0;
+          _timer?.cancel();
+          _onTimeFinished();
+        } else {
+          remainingSeconds.value = newRemaining;
+        }
+      }
+      _pausedTime = null;
+      if (currentState.value != TimerState.idle && !isPaused.value) {
+        resetAmbientTimer();
+      }
+    }
+  }
+
+  @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _ambientTimer?.cancel();
+    WakelockPlus.disable();
     super.onClose();
   }
 }

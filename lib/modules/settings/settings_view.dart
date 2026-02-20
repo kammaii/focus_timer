@@ -23,23 +23,22 @@ class SettingsView extends GetView<SettingsController> {
                 children: [
                    const Text("타이머 설정", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                    const SizedBox(height: 16),
-                   _buildSlider("집중 시간 (분)", controller.focusMinutes, 5, 120),
-                   _buildSlider("휴식 시간 (분)", controller.restMinutes, 1, 30),
-                   _buildSlider("반복 횟수 (사이클)", controller.repeatCount, 1, 10),
+                   _buildSlider("집중 시간 (분)", controller.focusMinutes, 5, 60, divisions: 11),
+                   _buildSlider("휴식 시간 (분)", controller.restMinutes, 5, 30, divisions: 5),
+                   _buildSlider("반복 횟수 (사이클)", controller.repeatCount, 1, 10, divisions: 9),
                    
                    const SizedBox(height: 16),
-                   SizedBox(
-                     width: double.infinity,
-                     child: ElevatedButton(
-                       onPressed: () {
-                         int f = controller.focusMinutes.value;
-                         int r = controller.restMinutes.value;
-                         int c = controller.repeatCount.value;
-                         controller.saveSettings(f, r, c);
-                       },
-                       child: const Text("설정 저장"),
-                     ),
-                   )
+                   Obx(() => SwitchListTile(
+                     title: const Text("달빛 모드", style: TextStyle(fontWeight: FontWeight.bold)),
+                     subtitle: const Text("항상 켜져 있으며 1분간 터치가 없으면 어두운 화면으로 전환됩니다."),
+                     value: controller.ambientModeEnabled.value,
+                     onChanged: (val) {
+                       controller.ambientModeEnabled.value = val;
+                       controller.saveSilently();
+                     },
+                     activeThumbColor: AppColors.primary,
+                     contentPadding: EdgeInsets.zero,
+                   )),
                 ],
               ),
             ),
@@ -94,7 +93,7 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildSlider(String label, RxInt rxValue, double min, double max) {
+  Widget _buildSlider(String label, RxInt rxValue, double min, double max, {int? divisions}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -103,9 +102,13 @@ class SettingsView extends GetView<SettingsController> {
           value: rxValue.value.toDouble(),
           min: min,
           max: max,
+          divisions: divisions,
           activeColor: AppColors.primary,
           inactiveColor: AppColors.primary.withOpacity(0.3),
-          onChanged: (val) => rxValue.value = val.toInt(),
+          onChanged: (val) {
+            rxValue.value = val.toInt();
+            controller.saveSilently();
+          },
         )),
       ],
     );
