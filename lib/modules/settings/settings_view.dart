@@ -4,7 +4,9 @@ import 'settings_controller.dart';
 import '../../core/theme/app_colors.dart';
 
 class SettingsView extends GetView<SettingsController> {
-  const SettingsView({super.key});
+  SettingsView({super.key});
+
+  final TextEditingController _textController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +69,7 @@ class SettingsView extends GetView<SettingsController> {
                     children: [
                       Expanded(
                         child: TextField(
+                          controller: _textController,
                           decoration: const InputDecoration(
                             hintText: '새 카테고리 추가...',
                             border: OutlineInputBorder(),
@@ -75,6 +78,7 @@ class SettingsView extends GetView<SettingsController> {
                           onSubmitted: (value) {
                             if(value.trim().isNotEmpty) {
                               controller.addCategory(value.trim());
+                              _textController.clear();
                             }
                           },
                         ),
