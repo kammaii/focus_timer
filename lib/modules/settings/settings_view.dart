@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'settings_controller.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -7,6 +8,14 @@ class SettingsView extends GetView<SettingsController> {
   SettingsView({super.key});
 
   final TextEditingController _textController = TextEditingController();
+
+  final List<String> soundOptions = ['none', 'notification', 'alarm', 'ringtone'];
+  final Map<String, String> soundLabels = {
+    'none': '무음 (소리 없음)',
+    'notification': '기본 알림음',
+    'alarm': '기본 알람음',
+    'ringtone': '기본 벨소리',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +48,12 @@ class SettingsView extends GetView<SettingsController> {
                      activeThumbColor: AppColors.primary,
                      contentPadding: EdgeInsets.zero,
                    )),
+                   
+                   const SizedBox(height: 16),
+                   const Text("알림음 설정", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 8),
+                   _buildSoundDropdown("집중 완료 시", controller.focusEndSound),
+                   _buildSoundDropdown("휴식 완료 시", controller.restEndSound),
                 ],
               ),
             ),
@@ -112,5 +127,72 @@ class SettingsView extends GetView<SettingsController> {
         )),
       ],
     );
+  }
+
+  Widget _buildSoundDropdown(String label, RxString rxValue) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textLight)),
+        const SizedBox(height: 8),
+        Obx(() {
+          final List<DropdownMenuItem<String>> items = [];
+          
+          for (var opt in soundOptions) {
+            items.add(DropdownMenuItem(value: opt, child: Text(soundLabels[opt]!)));
+          }
+          
+          for (var r in controller.systemRingtones) {
+            // DropdownMenuItem 텍스트가 잘리지 않도록 Overflow 설정 지원 위젯 사용
+            items.add(
+              DropdownMenuItem(
+                value: 'uri:${r.uri}', 
+                child: SizedBox(
+                  width: 250, 
+                  child: Text(r.title, overflow: TextOverflow.ellipsis)
+                )
+              )
+            );
+          }
+
+          String currentValue = rxValue.value;
+          if (!items.any((item) => item.value == currentValue)) {
+            currentValue = 'notification';
+          }
+          
+          return DropdownButtonFormField<String>(
+            value: currentValue,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(), 
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+            ),
+            items: items,
+            onChanged: (val) {
+              if (val != null) {
+                rxValue.value = val;
+                controller.saveSilently();
+                _playTestSound(val);
+              }
+            },
+          );
+        }),
+      ]
+    );
+  }
+  
+  void _playTestSound(String type) {
+    if (type.startsWith('uri:')) {
+      final uri = type.substring(4);
+      FlutterRingtonePlayer().play(fromFile: uri);
+      return;
+    }
+    switch (type) {
+      case 'notification': FlutterRingtonePlayer().playNotification(); break;
+      case 'alarm': FlutterRingtonePlayer().playAlarm(); break;
+      case 'ringtone': FlutterRingtonePlayer().playRingtone(); break;
+      default: break;
+    }
   }
 }

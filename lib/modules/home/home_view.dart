@@ -4,6 +4,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'home_controller.dart';
 import 'widgets/focus_rabbit.dart';
 import 'widgets/rest_rabbit.dart';
+import 'widgets/heart_pop_rabbit.dart';
 import 'widgets/night_sky_background.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -39,7 +40,7 @@ class HomeView extends GetView<HomeController> {
             Obx(() {
               if (controller.settings.categories.isEmpty) return const SizedBox.shrink();
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   color: AppColors.card,
                   borderRadius: BorderRadius.circular(30),
@@ -121,9 +122,11 @@ class HomeView extends GetView<HomeController> {
                               duration: const Duration(milliseconds: 300),
                               height: lottieSize,
                               width: lottieSize,
-                              child: controller.currentState.value == TimerState.rest
-                                ? const MouthMunchRabbitV5()
-                                : const FloppyEarRabbit(),
+                              child: controller.currentState.value == TimerState.idle
+                                ? const HeartPopRabbit()
+                                : controller.currentState.value == TimerState.rest
+                                  ? const MouthMunchRabbitV5()
+                                  : const FloppyEarRabbit(),
                             )),
                             
                             SizedBox(height: spacing),
@@ -275,9 +278,11 @@ class HomeView extends GetView<HomeController> {
                                   duration: const Duration(milliseconds: 300),
                                   height: 200,
                                   width: 200,
-                                  child: controller.currentState.value == TimerState.rest
-                                    ? const MouthMunchRabbitV5()
-                                    : const FloppyEarRabbit(),
+                                  child: controller.currentState.value == TimerState.idle
+                                    ? const HeartPopRabbit()
+                                    : controller.currentState.value == TimerState.rest
+                                      ? const MouthMunchRabbitV5()
+                                      : const FloppyEarRabbit(),
                                 ),
                               ),
                             ),

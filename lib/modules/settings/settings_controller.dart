@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:jbh_ringtone/jbh_ringtone.dart';
 import '../../data/providers/local_storage_provider.dart';
 
 class SettingsController extends GetxController {
@@ -11,7 +12,11 @@ class SettingsController extends GetxController {
   var repeatCount = 4.obs;
   var ambientModeEnabled = false.obs;
   
+  var focusEndSound = 'alarm'.obs;
+  var restEndSound = 'notification'.obs;
+  
   var categories = <String>[].obs;
+  var systemRingtones = <JbhRingtoneModel>[].obs;
 
   @override
   void onInit() {
@@ -25,8 +30,18 @@ class SettingsController extends GetxController {
     restMinutes.value = settings['restMinutes'] ?? 5;
     repeatCount.value = settings['repeatCount'] ?? 4;
     ambientModeEnabled.value = settings['ambientModeEnabled'] ?? false;
+    focusEndSound.value = settings['focusEndSound'] ?? 'alarm';
+    restEndSound.value = settings['restEndSound'] ?? 'notification';
 
     categories.value = await storageProvider.loadCategories();
+    
+    try {
+      final ringtoneList = await JbhRingtone().getNotificationRingtones();
+      systemRingtones.assignAll(ringtoneList);
+    } catch (e) {
+      // 권한이나 플랫폼 문제로 실패할 경우 무시
+      print("시스템 알림음 로드 실패: $e");
+    }
   }
 
   Future<void> saveSettings(int focus, int rest, int repeat, bool ambient) async {
@@ -52,6 +67,8 @@ class SettingsController extends GetxController {
       'restMinutes': restMinutes.value,
       'repeatCount': repeatCount.value,
       'ambientModeEnabled': ambientModeEnabled.value,
+      'focusEndSound': focusEndSound.value,
+      'restEndSound': restEndSound.value,
     });
   }
 

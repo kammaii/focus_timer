@@ -27,17 +27,14 @@ class _MunchRabbitV5State extends State<MouthMunchRabbitV5> with SingleTickerPro
     return Container(
       color: Colors.transparent,
       child: Center(
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: AnimatedBuilder(
-            animation: _munchController,
-            builder: (context, child) {
-              return CustomPaint(
-                size: const Size(200, 200),
-                painter: MouthMunchPainterV5(munchOffset: _munchAnimation.value),
-              );
-            },
-          ),
+        child: AnimatedBuilder(
+          animation: _munchController,
+          builder: (context, child) {
+            return CustomPaint(
+              size: const Size(150, 150),
+              painter: MouthMunchPainterV5(munchOffset: _munchAnimation.value),
+            );
+          },
         ),
       ),
     );
@@ -65,8 +62,9 @@ class MouthMunchPainterV5 extends CustomPainter {
     final leafStroke = Paint()..color = Colors.green[800]!..style = PaintingStyle.stroke..strokeWidth = 1.5;
     final cheekPaint = Paint()..color = Colors.pink[100]!.withOpacity(0.6);
 
-    // 버튼 영역과 겹치지 않도록 Y축 중심을 위로 올림 (+50 -> +20)
-    canvas.translate(size.width / 2, size.height / 2 + 20);
+    // 버튼 영역과 겹치지 않도록 + 크기를 0.8로 줄여 집중 모드(150x150)와 시각적 크기 일치
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(0.8, 0.8);
 
     // 1. 몸통 & 귀 (고정)
     _drawStaticBody(canvas, bodyPaint, stroke, cheekPaint);

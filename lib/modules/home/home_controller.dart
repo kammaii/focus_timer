@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import '../settings/settings_controller.dart';
 import '../records/records_controller.dart';
 
@@ -106,10 +107,26 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     });
   }
 
+  void _playSound(String type) {
+    if (type.startsWith('uri:')) {
+      final uri = type.substring(4);
+      FlutterRingtonePlayer().play(fromFile: uri);
+      return;
+    }
+    if (type == 'notification') {
+      FlutterRingtonePlayer().playNotification();
+    } else if (type == 'alarm') {
+      FlutterRingtonePlayer().playAlarm();
+    } else if (type == 'ringtone') {
+      FlutterRingtonePlayer().playRingtone();
+    }
+  }
+
   void _onTimeFinished() {
     if (currentState.value == TimerState.focus) {
       // Save record
       records.addRecord(settings.focusMinutes.value * 60, selectedCategory.value);
+      _playSound(settings.focusEndSound.value);
       
       if (currentCycle.value < settings.repeatCount.value) {
         startRest();
@@ -119,6 +136,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         Get.snackbar("완료!", "모든 집중 사이클을 완료했습니다! 🎉", snackPosition: SnackPosition.BOTTOM);
       }
     } else if (currentState.value == TimerState.rest) {
+      _playSound(settings.restEndSound.value);
       currentCycle.value++;
       startFocus();
     }
