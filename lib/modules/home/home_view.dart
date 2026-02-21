@@ -149,7 +149,28 @@ class HomeView extends GetView<HomeController> {
                                     ),
                                     const SizedBox(width: 30),
                                     IconButton(
-                                      onPressed: controller.stopTimer,
+                                      onPressed: () {
+                                        Get.dialog(
+                                          AlertDialog(
+                                            title: const Text("타이머 종료", style: TextStyle(fontWeight: FontWeight.bold)),
+                                            content: const Text("정말 진행 중인 타이머를 종료하시겠습니까?\n현재 집중 기록은 저장되지 않습니다."),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Get.back(),
+                                                child: const Text("취소", style: TextStyle(color: AppColors.textLight)),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Get.back();
+                                                  controller.stopTimer();
+                                                },
+                                                child: const Text("종료", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                                              ),
+                                            ],
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                          )
+                                        );
+                                      },
                                       icon: const Icon(Icons.stop_circle),
                                       iconSize: iconSize * 0.9,
                                       color: AppColors.error,
