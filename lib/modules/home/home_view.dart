@@ -4,6 +4,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'home_controller.dart';
 import 'widgets/focus_rabbit.dart';
 import 'widgets/rest_rabbit.dart';
+import 'widgets/night_sky_background.dart';
 import '../../core/theme/app_colors.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -21,6 +22,14 @@ class HomeView extends GetView<HomeController> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.nightlight_round),
+            onPressed: controller.toggleAmbientModeForTest,
+            tooltip: "달빛 모드 테스트",
+            color: AppColors.primary,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -210,37 +219,52 @@ class HomeView extends GetView<HomeController> {
             return Positioned.fill(
               child: GestureDetector(
                 onTap: controller.resetAmbientTimer,
-                child: Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          controller.formattedTime,
-                          style: const TextStyle(
-                            fontSize: 100,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white70,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const SizedBox(height: 50),
-                        ColorFiltered(
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF222222), BlendMode.srcATop),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            height: 200,
-                            width: 200,
-                            child: controller.currentState.value == TimerState.rest
-                              ? const MouthMunchRabbitV5()
-                              : const FloppyEarRabbit(),
-                          ),
-                        ),
-                      ],
+                behavior: HitTestBehavior.opaque,
+                child: Stack(
+                  children: [
+                    // 검은색 배경 베이스
+                    Container(color: Colors.black),
+                    
+                    // 별똥별과 달이 있는 밤하늘 배경 레이어
+                    const Positioned.fill(
+                      child: NightSkyBackground()
                     ),
-                  ),
+                    
+                    // 기존 타이머 텍스트와 실루엣 토끼
+                    Positioned.fill(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              controller.formattedTime,
+                              style: const TextStyle(
+                                fontSize: 100,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white70,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(height: 50),
+                            IgnorePointer(
+                              child: ColorFiltered(
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFF222222), BlendMode.srcATop),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  height: 200,
+                                  width: 200,
+                                  child: controller.currentState.value == TimerState.rest
+                                    ? const MouthMunchRabbitV5()
+                                    : const FloppyEarRabbit(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );

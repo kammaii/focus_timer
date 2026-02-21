@@ -183,6 +183,10 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  void toggleAmbientModeForTest() {
+    isAmbientMode.value = !isAmbientMode.value;
+  }
+
   String get formattedTime {
     int minutes = remainingSeconds.value ~/ 60;
     int seconds = remainingSeconds.value % 60;
