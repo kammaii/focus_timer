@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:jbh_ringtone/jbh_ringtone.dart';
 import '../settings/settings_controller.dart';
 import '../records/records_controller.dart';
 
@@ -110,7 +111,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void _playSound(String type) {
     if (type.startsWith('uri:')) {
       final uri = type.substring(4);
-      FlutterRingtonePlayer().play(fromFile: uri);
+      JbhRingtone().playRingtone(uri);
       return;
     }
     if (type == 'notification') {
@@ -203,6 +204,16 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   void toggleAmbientModeForTest() {
     isAmbientMode.value = !isAmbientMode.value;
+  }
+
+  void toggleTimerStateForTest() {
+    if (currentState.value == TimerState.idle) {
+      startFocus();
+    } else if (currentState.value == TimerState.focus) {
+      startRest();
+    } else {
+      stopTimer();
+    }
   }
 
   String get formattedTime {

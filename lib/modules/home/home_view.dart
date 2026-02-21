@@ -25,6 +25,12 @@ class HomeView extends GetView<HomeController> {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: controller.toggleTimerStateForTest,
+            tooltip: "상태 전환 테스트 (대기->집중->휴식)",
+            color: AppColors.primary,
+          ),
+          IconButton(
             icon: const Icon(Icons.nightlight_round),
             onPressed: controller.toggleAmbientModeForTest,
             tooltip: "달빛 모드 테스트",

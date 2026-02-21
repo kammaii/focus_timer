@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:jbh_ringtone/jbh_ringtone.dart';
 import 'settings_controller.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -185,7 +186,7 @@ class SettingsView extends GetView<SettingsController> {
   void _playTestSound(String type) {
     if (type.startsWith('uri:')) {
       final uri = type.substring(4);
-      FlutterRingtonePlayer().play(fromFile: uri);
+      JbhRingtone().playRingtone(uri);
       return;
     }
     switch (type) {
