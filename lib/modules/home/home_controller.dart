@@ -17,6 +17,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   var currentState = TimerState.idle.obs;
   var isPaused = false.obs;
   var remainingSeconds = 0.obs;
+  var currentTotalSeconds = 0.obs;
   var selectedCategory = "".obs;
   var currentCycle = 1.obs;
   bool isTestMode = false;
@@ -35,13 +36,16 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   int _pausedRemainingSeconds = 0;
 
   int get totalSeconds {
-    if (currentState.value == TimerState.rest) return settings.restMinutes.value * 60;
-    return settings.focusMinutes.value * 60;
+    if (currentState.value == TimerState.idle) {
+      return settings.focusMinutes.value * 60;
+    }
+    return currentTotalSeconds.value;
   }
 
   double get progress {
-    if (totalSeconds == 0) return 0;
-    return 1.0 - (remainingSeconds.value / totalSeconds);
+    if (totalSeconds == 0) return 0.0;
+    double p = 1.0 - (remainingSeconds.value / totalSeconds);
+    return p.clamp(0.0, 1.0);
   }
 
   @override
@@ -86,7 +90,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
     currentState.value = TimerState.focus;
     isPaused.value = false;
-    remainingSeconds.value = settings.focusMinutes.value * 60;
+    currentTotalSeconds.value = settings.focusMinutes.value * 60;
+    remainingSeconds.value = currentTotalSeconds.value;
     _startCountdown();
     resetAmbientTimer();
   }
@@ -94,7 +99,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void startRest() {
     currentState.value = TimerState.rest;
     isPaused.value = false;
-    remainingSeconds.value = isTestMode ? 5 : settings.restMinutes.value * 60;
+    currentTotalSeconds.value = isTestMode ? 5 : settings.restMinutes.value * 60;
+    remainingSeconds.value = currentTotalSeconds.value;
     _startCountdown();
     resetAmbientTimer();
   }
@@ -155,6 +161,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     currentState.value = TimerState.idle;
     isTestMode = false;
     isPaused.value = false;
+    currentTotalSeconds.value = 0;
     currentCycle.value = 1;
     _resetTimer();
     isAmbientMode.value = false;
@@ -193,6 +200,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void addRestMinute() {
     if (currentState.value == TimerState.rest) {
       remainingSeconds.value += 60;
+      currentTotalSeconds.value += 60;
       resetAmbientTimer();
     }
   }
@@ -219,6 +227,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     currentState.value = TimerState.focus;
     isPaused.value = false;
     currentCycle.value = 1;
+    currentTotalSeconds.value = 5;
     remainingSeconds.value = 5;
     _startCountdown();
     resetAmbientTimer();
