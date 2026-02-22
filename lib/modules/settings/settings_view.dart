@@ -9,9 +9,24 @@ class SettingsView extends GetView<SettingsController> {
 
   final TextEditingController _textController = TextEditingController();
 
-  final List<String> soundOptions = ['default', 'silent'];
+  final List<String> soundOptions = [
+    'ding_ding.mp3',
+    'ding_ring.mp3',
+    'yeah.mp3',
+    'tada.mp3',
+    'ba_bam.wav',
+    'ba_ba_bam.wav',
+    'chwarara.wav',
+    'silent'
+  ];
   final Map<String, String> soundLabels = {
-    'default': '기본 푸시 알림음',
+    'ding_ding.mp3': '띠딩',
+    'ding_ring.mp3': '띠링',
+    'yeah.mp3': '예~',
+    'tada.mp3': '따단!',
+    'ba_bam.wav': '빠밤',
+    'ba_ba_bam.wav': '빠바밤',
+    'chwarara.wav': '촤라라',
     'silent': '무음 (진동/화면표시만)',
   };
 
@@ -143,7 +158,7 @@ class SettingsView extends GetView<SettingsController> {
 
           String currentValue = rxValue.value;
           if (!items.any((item) => item.value == currentValue)) {
-            currentValue = 'default';
+            currentValue = 'ding_ding.mp3';
           }
           
           return DropdownButtonFormField<String>(
@@ -158,22 +173,12 @@ class SettingsView extends GetView<SettingsController> {
               if (val != null) {
                 rxValue.value = val;
                 controller.saveSilently();
-                _playTestSound(val);
+                controller.playTestSound(val);
               }
             },
           );
         }),
       ]
-    );
-  }
-  
-  void _playTestSound(String type) {
-    if (type == 'silent') return;
-    NotificationService().showImmediateNotification(
-      999, // test id
-      "알림음 테스트",
-      "이 소리로 알림이 울립니다.",
-      type,
     );
   }
 }
