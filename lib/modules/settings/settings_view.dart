@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
-import 'package:jbh_ringtone/jbh_ringtone.dart';
 import 'settings_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/services/notification_service.dart';
 
 class SettingsView extends GetView<SettingsController> {
   SettingsView({super.key});
 
   final TextEditingController _textController = TextEditingController();
 
-  final List<String> soundOptions = ['none', 'notification', 'alarm', 'ringtone'];
+  final List<String> soundOptions = ['default', 'silent'];
   final Map<String, String> soundLabels = {
-    'none': '무음 (소리 없음)',
-    'notification': '기본 알림음',
-    'alarm': '기본 알람음',
-    'ringtone': '기본 벨소리',
+    'default': '기본 푸시 알림음',
+    'silent': '무음 (진동/화면표시만)',
   };
 
   @override
@@ -143,23 +140,10 @@ class SettingsView extends GetView<SettingsController> {
           for (var opt in soundOptions) {
             items.add(DropdownMenuItem(value: opt, child: Text(soundLabels[opt]!)));
           }
-          
-          for (var r in controller.systemRingtones) {
-            // DropdownMenuItem 텍스트가 잘리지 않도록 Overflow 설정 지원 위젯 사용
-            items.add(
-              DropdownMenuItem(
-                value: 'uri:${r.uri}', 
-                child: SizedBox(
-                  width: 250, 
-                  child: Text(r.title, overflow: TextOverflow.ellipsis)
-                )
-              )
-            );
-          }
 
           String currentValue = rxValue.value;
           if (!items.any((item) => item.value == currentValue)) {
-            currentValue = 'notification';
+            currentValue = 'default';
           }
           
           return DropdownButtonFormField<String>(
@@ -184,16 +168,12 @@ class SettingsView extends GetView<SettingsController> {
   }
   
   void _playTestSound(String type) {
-    if (type.startsWith('uri:')) {
-      final uri = type.substring(4);
-      JbhRingtone().playRingtone(uri);
-      return;
-    }
-    switch (type) {
-      case 'notification': FlutterRingtonePlayer().playNotification(); break;
-      case 'alarm': FlutterRingtonePlayer().playAlarm(); break;
-      case 'ringtone': FlutterRingtonePlayer().playRingtone(); break;
-      default: break;
-    }
+    if (type == 'silent') return;
+    NotificationService().showImmediateNotification(
+      999, // test id
+      "알림음 테스트",
+      "이 소리로 알림이 울립니다.",
+      type,
+    );
   }
 }

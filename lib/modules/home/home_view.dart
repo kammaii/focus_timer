@@ -24,18 +24,17 @@ class HomeView extends GetView<HomeController> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.swap_horiz),
-            onPressed: controller.toggleTimerStateForTest,
-            tooltip: "상태 전환 테스트 (대기->집중->휴식)",
-            color: AppColors.primary,
-          ),
-          IconButton(
-            icon: const Icon(Icons.nightlight_round),
-            onPressed: controller.toggleAmbientModeForTest,
-            tooltip: "달빛 모드 테스트",
-            color: AppColors.primary,
-          ),
+          Obx(() {
+            if (controller.currentState.value == TimerState.idle) {
+              return IconButton(
+                icon: const Icon(Icons.speed),
+                onPressed: controller.startQuickTest,
+                tooltip: "빠른 테스트 (5초 집중 -> 5초 휴식)",
+                color: AppColors.primary,
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
       body: SafeArea(

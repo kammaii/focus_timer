@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
-import 'package:jbh_ringtone/jbh_ringtone.dart';
+import '../../core/services/notification_service.dart';
 import '../settings/settings_controller.dart';
 import '../records/records_controller.dart';
 
@@ -20,6 +19,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   var remainingSeconds = 0.obs;
   var selectedCategory = "".obs;
   var currentCycle = 1.obs;
+  bool isTestMode = false;
   
   // Ambient Mode
   var isAmbientMode = false.obs;
@@ -84,6 +84,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     currentState.value = TimerState.focus;
     isPaused.value = false;
     remainingSeconds.value = settings.focusMinutes.value * 60;
+    _scheduleNotification("집중 완료!", "수고하셨습니다. 이제 휴식을 취하세요.", settings.focusEndSound.value);
     _startCountdown();
     resetAmbientTimer();
   }
@@ -91,7 +92,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void startRest() {
     currentState.value = TimerState.rest;
     isPaused.value = false;
-    remainingSeconds.value = settings.restMinutes.value * 60;
+    remainingSeconds.value = isTestMode ? 5 : settings.restMinutes.value * 60;
+    _scheduleNotification("휴식 완료!", "휴식이 끝났습니다. 다시 집중해볼까요?", settings.restEndSound.value);
     _startCountdown();
     resetAmbientTimer();
   }
@@ -108,28 +110,23 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     });
   }
 
-  void _playSound(String type) {
-    if (type.startsWith('uri:')) {
-      final uri = type.substring(4);
-      JbhRingtone().playRingtone(uri);
-      return;
-    }
-    if (type == 'notification') {
-      FlutterRingtonePlayer().playNotification();
-    } else if (type == 'alarm') {
-      FlutterRingtonePlayer().playAlarm();
-    } else if (type == 'ringtone') {
-      FlutterRingtonePlayer().playRingtone();
-    }
+  void _scheduleNotification(String title, String body, String soundType) {
+    if (soundType == 'silent') return;
+    NotificationService().scheduleTimerNotification(
+      1,
+      title,
+      body,
+      remainingSeconds.value,
+      soundType,
+    );
   }
 
   void _onTimeFinished() {
     if (currentState.value == TimerState.focus) {
       // Save record
       records.addRecord(settings.focusMinutes.value * 60, selectedCategory.value);
-      _playSound(settings.focusEndSound.value);
       
-      if (currentCycle.value < settings.repeatCount.value) {
+      if (currentCycle.value < (isTestMode ? 2 : settings.repeatCount.value)) {
         startRest();
       } else {
         stopTimer();
@@ -137,7 +134,6 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         Get.snackbar("완료!", "모든 집중 사이클을 완료했습니다! 🎉", snackPosition: SnackPosition.BOTTOM);
       }
     } else if (currentState.value == TimerState.rest) {
-      _playSound(settings.restEndSound.value);
       currentCycle.value++;
       startFocus();
     }
@@ -146,7 +142,9 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   void stopTimer() {
     _timer?.cancel();
+    NotificationService().cancelNotification(1);
     currentState.value = TimerState.idle;
+    isTestMode = false;
     isPaused.value = false;
     currentCycle.value = 1;
     _resetTimer();
@@ -159,6 +157,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     if (currentState.value != TimerState.idle && !isPaused.value) {
       isPaused.value = true;
       _timer?.cancel();
+      NotificationService().cancelNotification(1);
       isAmbientMode.value = false;
       _ambientTimer?.cancel();
       WakelockPlus.disable();
@@ -168,6 +167,10 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void resumeTimer() {
     if (currentState.value != TimerState.idle && isPaused.value) {
       isPaused.value = false;
+      String title = currentState.value == TimerState.focus ? "집중 완료!" : "휴식 완료!";
+      String body = currentState.value == TimerState.focus ? "수고하셨습니다. 이제 휴식을 취하세요." : "휴식이 끝났습니다. 다시 집중해볼까요?";
+      String sound = currentState.value == TimerState.focus ? settings.focusEndSound.value : settings.restEndSound.value;
+      _scheduleNotification(title, body, sound);
       _startCountdown();
       resetAmbientTimer();
     }
@@ -176,6 +179,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void skipRest() {
     if (currentState.value == TimerState.rest) {
       _timer?.cancel();
+      NotificationService().cancelNotification(1);
       currentCycle.value++;
       startFocus();
     }
@@ -184,6 +188,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void addRestMinute() {
     if (currentState.value == TimerState.rest) {
       remainingSeconds.value += 60;
+      _scheduleNotification("휴식 완료!", "휴식이 끝났습니다. 다시 집중해볼까요?", settings.restEndSound.value);
       resetAmbientTimer();
     }
   }
@@ -202,18 +207,18 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  void toggleAmbientModeForTest() {
-    isAmbientMode.value = !isAmbientMode.value;
-  }
-
-  void toggleTimerStateForTest() {
-    if (currentState.value == TimerState.idle) {
-      startFocus();
-    } else if (currentState.value == TimerState.focus) {
-      startRest();
-    } else {
-      stopTimer();
+  void startQuickTest() {
+    isTestMode = true;
+    if (selectedCategory.value.isEmpty && settings.categories.isNotEmpty) {
+      selectedCategory.value = settings.categories.first;
     }
+    currentState.value = TimerState.focus;
+    isPaused.value = false;
+    currentCycle.value = 1;
+    remainingSeconds.value = 5;
+    _scheduleNotification("집중 완료!", "수고하셨습니다. 이제 휴식을 취하세요.", settings.focusEndSound.value);
+    _startCountdown();
+    resetAmbientTimer();
   }
 
   String get formattedTime {
