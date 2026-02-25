@@ -4,6 +4,7 @@ import 'home/home_view.dart';
 import 'home/home_controller.dart';
 import 'records/records_view.dart';
 import 'settings/settings_view.dart';
+import 'collection/collection_view.dart';
 import '../core/theme/app_colors.dart';
 
 class MainController extends GetxController {
@@ -22,6 +23,7 @@ class MainScreen extends StatelessWidget {
   final List<Widget> pages = [
     const HomeView(),
     const RecordsView(),
+    const CollectionView(),
     SettingsView(),
   ];
 
@@ -56,6 +58,10 @@ class MainScreen extends StatelessWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart),
               label: '기록',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.pets),
+              label: '도감',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),

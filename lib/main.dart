@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers/local_storage_provider.dart';
 import 'modules/home/home_controller.dart';
+import 'modules/home/damagotchi_controller.dart';
 import 'modules/records/records_controller.dart';
 import 'modules/settings/settings_controller.dart';
 import 'modules/main_screen.dart';
@@ -17,6 +18,7 @@ class InitialBinding extends Bindings {
     
     Get.put(SettingsController(storageProvider: storageProvider), permanent: true);
     Get.put(RecordsController(storageProvider: storageProvider), permanent: true);
+    Get.put(DamagotchiController(storageProvider: storageProvider), permanent: true);
     
     Get.lazyPut(() => HomeController(
       settings: Get.find<SettingsController>(),

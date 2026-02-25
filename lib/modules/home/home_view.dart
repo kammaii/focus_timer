@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import '../../data/models/animal.dart';
 import 'home_controller.dart';
-import 'widgets/focus_rabbit.dart';
-import 'widgets/rest_rabbit.dart';
-import 'widgets/heart_pop_rabbit.dart';
+import 'damagotchi_controller.dart';
+import 'widgets/animal_view.dart';
 import 'widgets/night_sky_background.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -24,6 +24,42 @@ class HomeView extends GetView<HomeController> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
+          // 상태 전환 테스터
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: "상태 강제 변경",
+            color: AppColors.textLight,
+            onPressed: () {
+              final current = controller.currentState.value;
+              if (current == TimerState.idle) {
+                controller.currentState.value = TimerState.focus;
+              } else if (current == TimerState.focus) {
+                controller.currentState.value = TimerState.rest;
+              } else {
+                controller.currentState.value = TimerState.idle;
+              }
+            },
+          ),
+          // 동물 전환 테스터
+          IconButton(
+            icon: const Icon(Icons.pets),
+            tooltip: "테스트 동물 변경",
+            color: AppColors.textLight,
+            onPressed: () {
+              final damagotchiCtrl = Get.find<DamagotchiController>();
+              final currentAnimal = damagotchiCtrl.currentAnimal.value;
+              if (currentAnimal != null) {
+                final newType = currentAnimal.type == AnimalType.rabbit 
+                    ? AnimalType.dog 
+                    : AnimalType.rabbit;
+                damagotchiCtrl.currentAnimal.value = Animal(
+                  type: newType, 
+                  grade: AnimalGrade.normal,
+                  name: newType == AnimalType.dog ? "임시 강아지" : "임시 토끼",
+                );
+              }
+            },
+          ),
           Obx(() {
             if (controller.currentState.value == TimerState.idle) {
               return IconButton(
@@ -41,6 +77,7 @@ class HomeView extends GetView<HomeController> {
         child: Column(
           children: [
             const SizedBox(height: 20),
+            
             // Category Dropdown
             Obx(() {
               if (controller.settings.categories.isEmpty) return const SizedBox.shrink();
@@ -122,17 +159,37 @@ class HomeView extends GetView<HomeController> {
                             
                             SizedBox(height: spacing),
 
-                            // Lottie Animation
-                            Obx(() => AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              height: lottieSize,
-                              width: lottieSize,
-                              child: controller.currentState.value == TimerState.idle
-                                ? const HeartPopRabbit()
-                                : controller.currentState.value == TimerState.rest
-                                  ? const MouthMunchRabbitV5()
-                                  : const FloppyEarRabbit(),
-                            )),
+                            // Damagotchi Animal View
+                            Obx(() {
+                              final damagotchiController = Get.find<DamagotchiController>();
+                              final animal = damagotchiController.currentAnimal.value;
+                              
+                              if (animal == null) return const SizedBox.shrink();
+
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    height: lottieSize,
+                                    width: lottieSize,
+                                    child: AnimalView(
+                                      animal: animal,
+                                      state: controller.currentState.value,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    animal.name,
+                                    style: TextStyle(
+                                      fontSize: (availableHeight * 0.03).clamp(16.0, 24.0),
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textLight,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
                             
                             SizedBox(height: spacing),
                             
@@ -279,16 +336,36 @@ class HomeView extends GetView<HomeController> {
                               child: ColorFiltered(
                                 colorFilter: const ColorFilter.mode(
                                   Color(0xFF222222), BlendMode.srcATop),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  height: 200,
-                                  width: 200,
-                                  child: controller.currentState.value == TimerState.idle
-                                    ? const HeartPopRabbit()
-                                    : controller.currentState.value == TimerState.rest
-                                      ? const MouthMunchRabbitV5()
-                                      : const FloppyEarRabbit(),
-                                ),
+                                child: Obx(() {
+                                  final damagotchiController = Get.find<DamagotchiController>();
+                                  final animal = damagotchiController.currentAnimal.value;
+                                  if (animal == null) return const SizedBox.shrink();
+
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      AnimatedContainer(
+                                        duration: const Duration(milliseconds: 300),
+                                        height: 200,
+                                        width: 200,
+                                        child: AnimalView(
+                                          animal: animal,
+                                          state: controller.currentState.value,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        animal.name,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white54,
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
                               ),
                             ),
                           ],

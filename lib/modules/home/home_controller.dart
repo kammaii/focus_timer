@@ -5,6 +5,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../settings/settings_controller.dart';
 import '../records/records_controller.dart';
+import 'damagotchi_controller.dart';
 
 enum TimerState { idle, focus, rest }
 
@@ -133,12 +134,21 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  void _onTimeFinished() {
+  void _onTimeFinished() async {
     final finishedState = currentState.value;
     if (finishedState == TimerState.focus) {
       // Save record
       records.addRecord(settings.focusMinutes.value * 60, selectedCategory.value);
+      
       _playSound(settings.focusEndSound.value, finishedState);
+
+      // Damagotchi 다이얼로그 띄우고 보상 기다리기 (타이머는 일시정지 상태처럼 대기)
+      final damagotchiController = Get.find<DamagotchiController>();
+      int baseExp = isTestMode ? 60 : settings.focusMinutes.value;
+      int finalExp = await damagotchiController.showExpProgressAndGetReward(baseExp);
+      
+      // 실제 반영
+      await damagotchiController.gainExpAfterReward(finalExp);
       
       if (currentCycle.value < (isTestMode ? 2 : settings.repeatCount.value)) {
         startRest();

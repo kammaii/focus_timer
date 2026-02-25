@@ -45,6 +45,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0-dev.1
   timezone: ^0.11.0
   audioplayers: ^6.5.1
+  confetti: ^0.8.0
 
 dev_dependencies:
   flutter_test:
