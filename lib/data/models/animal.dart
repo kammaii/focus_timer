@@ -1,18 +1,21 @@
 import 'package:uuid/uuid.dart';
 
-enum AnimalLevel { egg, baby, adult }
+enum AnimalLevel { egg, animal }
 enum AnimalGrade { normal, special }
 
 enum AnimalType {
-  // 일반 알
+  // 일반 알 (4종)
   rabbit, 
-  squirrel, 
-  bird,
-  // 스페셜 알
-  bear, 
-  tiger, 
-  elephant, 
-  dinosaur, dog
+  cat,
+  squirrel,
+  hedgehog,
+  // 스페셜 알 (6종)
+  dog,
+  turtle,
+  tiger,
+  lion,
+  bear,
+  dinosaur
 }
 
 class Animal {
@@ -34,25 +37,25 @@ class Animal {
   static String _getDefaultName(AnimalType type) {
     switch (type) {
       case AnimalType.rabbit: return "토끼";
+      case AnimalType.cat: return "고양이";
       case AnimalType.squirrel: return "다람쥐";
-      case AnimalType.bird: return "작은 새";
-      case AnimalType.bear: return "곰";
-      case AnimalType.tiger: return "호랑이";
-      case AnimalType.elephant: return "코끼리";
-      case AnimalType.dinosaur: return "공룡";
+      case AnimalType.hedgehog: return "고슴도치";
       case AnimalType.dog: return "강아지";
+      case AnimalType.turtle: return "거북이";
+      case AnimalType.tiger: return "호랑이";
+      case AnimalType.lion: return "사자";
+      case AnimalType.bear: return "곰";
+      case AnimalType.dinosaur: return "공룡";
     }
   }
 
   AnimalLevel get level {
-    // 일반알: 알 -> 아기 (2시간 = 120분), 아기 -> 어른 (18시간 = 1080분, 누적 1200분)
-    // 스페셜알: 알 -> 아기 (5시간 = 300분), 아기 -> 어른 (25시간 = 1500분, 누적 1800분)
+    // 일반알: 알 -> 동물 (2시간 = 120분)
+    // 스페셜알: 알 -> 동물 (5시간 = 300분)
     final isSpecial = grade == AnimalGrade.special;
-    final babyThreshold = isSpecial ? 300 : 120;
-    final adultThreshold = isSpecial ? 1800 : 1200;
+    final animalThreshold = isSpecial ? 300 : 120;
 
-    if (currentExpMinutes >= adultThreshold) return AnimalLevel.adult;
-    if (currentExpMinutes >= babyThreshold) return AnimalLevel.baby;
+    if (currentExpMinutes >= animalThreshold) return AnimalLevel.animal;
     return AnimalLevel.egg;
   }
 
@@ -60,8 +63,6 @@ class Animal {
     final isSpecial = grade == AnimalGrade.special;
     if (level == AnimalLevel.egg) {
       return isSpecial ? 300 : 120;
-    } else if (level == AnimalLevel.baby) {
-      return isSpecial ? 1800 : 1200;
     } else {
       return isSpecial ? 1800 : 1200;
     }
@@ -71,15 +72,13 @@ class Animal {
     final isSpecial = grade == AnimalGrade.special;
     if (level == AnimalLevel.egg) {
       return 0;
-    } else if (level == AnimalLevel.baby) {
-      return isSpecial ? 300 : 120;
     } else {
-      return isSpecial ? 1800 : 1200;
+      return isSpecial ? 300 : 120;
     }
   }
 
   double get currentLevelProgress {
-    if (level == AnimalLevel.adult) return 1.0;
+    if (isReadyToCollect) return 1.0;
     int baseExp = baseExpForCurrentLevel;
     int maxExp = maxExpForCurrentLevel;
     
@@ -90,7 +89,11 @@ class Animal {
     return (currentLevelExp / requiredExp).clamp(0.0, 1.0);
   }
 
-  bool get isAdult => level == AnimalLevel.adult;
+  bool get isReadyToCollect {
+    final isSpecial = grade == AnimalGrade.special;
+    final collectThreshold = isSpecial ? 1800 : 1200;
+    return currentExpMinutes >= collectThreshold;
+  }
 
   void addExp(int minutes) {
     currentExpMinutes += minutes;

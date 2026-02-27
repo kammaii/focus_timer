@@ -15,7 +15,7 @@ class FocusDog extends StatefulWidget {
 class _FocusDogState extends State<FocusDog> with TickerProviderStateMixin {
   late AnimationController _eyeController;
   late AnimationController _tailController;
-  
+
   late Animation<double> _eyeAnimation;
   late Animation<double> _tailAnimation;
 
@@ -43,9 +43,9 @@ class _FocusDogState extends State<FocusDog> with TickerProviderStateMixin {
     setState(() => _isSurprised = true);
     _tailController.duration = const Duration(milliseconds: 200); // 꼬리를 빠르게 흔듦
     _tailController.repeat(reverse: true);
-    
+
     await Future.delayed(const Duration(milliseconds: 1500));
-    
+
     if (mounted) {
       _tailController.duration = const Duration(milliseconds: 800); // 다시 천천히
       _tailController.repeat(reverse: true);
@@ -58,7 +58,7 @@ class _FocusDogState extends State<FocusDog> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: _onTapDog,
       child: Container(
-        color: Colors.transparent, 
+        color: Colors.transparent,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -98,12 +98,12 @@ class _FocusDogState extends State<FocusDog> with TickerProviderStateMixin {
 
 class _FocusDogPainter extends CustomPainter {
   final double eyeX;
-  final double tailWag; 
+  final double tailWag;
   final bool isSurprised;
 
   _FocusDogPainter({
-    required this.eyeX, 
-    required this.tailWag, 
+    required this.eyeX,
+    required this.tailWag,
     required this.isSurprised
   });
 
@@ -111,11 +111,11 @@ class _FocusDogPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final bodyColor = Colors.orange[200]!;
     final spotColor = Colors.brown[400]!;
-    
+
     final bodyPaint = Paint()..color = bodyColor;
     final spotPaint = Paint()..color = spotColor;
     final strokePaint = Paint()..color = Colors.black..style = PaintingStyle.stroke..strokeWidth = 2.5;
-    
+
     canvas.translate(size.width / 2, size.height / 2 - 30);
 
     // 1. 꼬리 그리기 (몸통 뒤)
@@ -146,7 +146,7 @@ class _FocusDogPainter extends CustomPainter {
     canvas.drawOval(const Rect.fromLTWH(-15, -5, 30, 25), Paint()..color = Colors.white); // 머즐
     canvas.drawOval(const Rect.fromLTWH(-15, -5, 30, 25), strokePaint); // 머즐 테두리
     canvas.drawCircle(const Offset(0, 5), 4, Paint()..color = Colors.black); // 코
-    
+
     // 입
     final mouthPath = Path()
       ..moveTo(-8, 12)..quadraticBezierTo(0, 18, 0, 12)..quadraticBezierTo(0, 18, 8, 12);
@@ -214,11 +214,11 @@ class RestDog extends StatefulWidget {
 }
 
 class _RestDogState extends State<RestDog> with TickerProviderStateMixin {
-  late AnimationController _munchController; 
-  late AnimationController _shareController; 
-  
+  late AnimationController _munchController;
+  late AnimationController _shareController;
+
   late Animation<double> _munchAnimation;
-  late Animation<double> _shareAnimation; 
+  late Animation<double> _shareAnimation;
 
   bool _isSharing = false;
 
@@ -242,10 +242,10 @@ class _RestDogState extends State<RestDog> with TickerProviderStateMixin {
 
     setState(() => _isSharing = true);
     await _shareController.forward();
-    await Future.delayed(const Duration(milliseconds: 1200)); 
-    
+    await Future.delayed(const Duration(milliseconds: 1200));
+
     if (mounted) {
-      await _shareController.reverse(); 
+      await _shareController.reverse();
       setState(() => _isSharing = false);
     }
   }
@@ -289,8 +289,8 @@ class _RestDogPainter extends CustomPainter {
   final bool isSharing;
 
   _RestDogPainter({
-    required this.munchOffset, 
-    required this.shareProgress, 
+    required this.munchOffset,
+    required this.shareProgress,
     required this.isSharing
   });
 
@@ -298,7 +298,7 @@ class _RestDogPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final bodyColor = Colors.orange[200]!;
     final spotColor = Colors.brown[400]!;
-    
+
     final bodyPaint = Paint()..color = bodyColor;
     final spotPaint = Paint()..color = spotColor;
     final stroke = Paint()..color = Colors.black..style = PaintingStyle.stroke..strokeWidth = 2.5;
@@ -318,24 +318,25 @@ class _RestDogPainter extends CustomPainter {
     // 3. 뼈다귀 & 앞발 (내밀어짐)
     canvas.save();
     canvas.translate(0, 15 * shareProgress);
-    canvas.scale(1.0 + (0.15 * shareProgress)); 
+    canvas.scale(1.0 + (0.15 * shareProgress));
 
     _drawStaticBone(canvas, bonePaint, stroke);
-    
+
     // 앞발
     canvas.drawCircle(const Offset(-20, 10), 12, spotPaint); canvas.drawCircle(const Offset(-20, 10), 12, stroke);
     canvas.drawCircle(const Offset(20, 10), 12, spotPaint); canvas.drawCircle(const Offset(20, 10), 12, stroke);
-    
+
     canvas.restore();
   }
 
   void _drawWaggleEar(Canvas canvas, Paint fill, Paint stroke, {required bool isLeft}) {
     canvas.save();
-    canvas.translate(isLeft ? -25 : 25, -40);
-    
-    double baseAngle = isLeft ? 0.4 : -0.4;
+    double startX = isLeft ? -38 : 38;
+    canvas.translate(startX, -45);
+
+    double baseAngle = isLeft ? -0.5 : 0.5;
     double waggle = isSharing ? math.sin(shareProgress * math.pi * 6) * 0.3 : 0.0;
-    
+
     canvas.rotate(baseAngle + waggle);
     final path = Path()
       ..moveTo(-10, -10)..lineTo(10, -10)..lineTo(15, 30)..quadraticBezierTo(0, 45, -15, 30)..close();
@@ -348,7 +349,7 @@ class _RestDogPainter extends CustomPainter {
     Rect bodyRect = const Rect.fromLTWH(-50, -60, 100, 110);
     canvas.drawRRect(RRect.fromRectAndRadius(bodyRect, const Radius.circular(40)), body);
     canvas.drawRRect(RRect.fromRectAndRadius(bodyRect, const Radius.circular(40)), stroke);
-    
+
     // 배 얼룩
     canvas.drawOval(const Rect.fromLTWH(-25, -5, 50, 40), Paint()..color = Colors.white.withOpacity(0.7));
 
@@ -359,7 +360,7 @@ class _RestDogPainter extends CustomPainter {
       canvas.drawPath(Path()..moveTo(-8, 0)..quadraticBezierTo(0, -8, 8, 0), stroke);
       canvas.restore();
     }
-    
+
     // 발
     _drawFoot(canvas, spot, stroke, isLeft: true);
     _drawFoot(canvas, spot, stroke, isLeft: false);
@@ -369,7 +370,7 @@ class _RestDogPainter extends CustomPainter {
     // 머즐 바탕
     canvas.drawOval(const Rect.fromLTWH(-20, -20, 40, 30), Paint()..color = Colors.white);
     canvas.drawOval(const Rect.fromLTWH(-20, -20, 40, 30), stroke);
-    
+
     // 코 (오물거릴때 위아래로 약간)
     canvas.drawCircle(Offset(0, -12 + (munchOffset * 0.3)), 5, Paint()..color = Colors.black);
 
@@ -381,7 +382,7 @@ class _RestDogPainter extends CustomPainter {
       ..lineTo(6 + munchOffset, 2 + munchOffset);
     canvas.drawPath(mouthPath, stroke..strokeWidth = 2.5);
   }
-  
+
   void _drawFoot(Canvas canvas, Paint fill, Paint stroke, {required bool isLeft}) {
     double x = isLeft ? -35 : 35;
     canvas.drawOval(Rect.fromLTWH(x - 15, 35, 30, 20), fill);
@@ -392,23 +393,23 @@ class _RestDogPainter extends CustomPainter {
     canvas.save();
     canvas.translate(0, 5);
     canvas.rotate(-math.pi / 16);
-    
+
     // 뼈다귀 모양 (가운데 막대 + 양끝 동그라미 4개)
     final rect = const Rect.fromLTWH(-25, -5, 50, 10);
     canvas.drawRect(rect, bonePaint);
     canvas.drawRect(rect, stroke..strokeWidth=2);
-    
+
     final circles = [
       const Offset(-25, -8), const Offset(-25, 8),
       const Offset(25, -8), const Offset(25, 8),
     ];
-    
+
     for (var center in circles) {
       canvas.drawCircle(center, 7, bonePaint);
       canvas.drawCircle(center, 7, stroke..strokeWidth=2);
     }
     canvas.drawRect(rect, bonePaint); // 선 덮기
-    
+
     canvas.restore();
   }
 
@@ -428,13 +429,13 @@ class IdleDog extends StatefulWidget {
 }
 
 class _IdleDogState extends State<IdleDog> with TickerProviderStateMixin {
-  late AnimationController _pantController; 
-  late AnimationController _tailController; 
-  
+  late AnimationController _pantController;
+  late AnimationController _tailController;
+
   late Animation<double> _pantAnimation;
   late Animation<double> _tailAnimation;
 
-  bool _isHappy = false; 
+  bool _isHappy = false;
   Timer? _happyTimer;
 
   @override
@@ -478,7 +479,7 @@ class _IdleDogState extends State<IdleDog> with TickerProviderStateMixin {
         color: Colors.transparent,
         child: Center(
           child: AnimatedBuilder(
-            animation: Listenable.merge([_pantController, _tailController]), 
+            animation: Listenable.merge([_pantController, _tailController]),
             builder: (context, child) {
               return CustomPaint(
                 size: const Size(150, 150),
@@ -517,11 +518,11 @@ class _IdleDogPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final bodyColor = Colors.orange[200]!;
     final spotColor = Colors.brown[400]!;
-    
+
     final bodyPaint = Paint()..color = bodyColor;
     final spotPaint = Paint()..color = spotColor;
     final stroke = Paint()..color = Colors.black..style = PaintingStyle.stroke..strokeWidth = 2.5;
-    
+
     canvas.translate(size.width / 2, size.height / 2 - 15 + pantOffset);
 
     // 1. 꼬리 그리기 (등 뒤에서 살랑)
@@ -551,19 +552,19 @@ class _IdleDogPainter extends CustomPainter {
       // 행복한 표정 (하트/별 모션 생략하고 눈웃음)
       _drawHappyEye(canvas, stroke, isLeft: true);
       _drawHappyEye(canvas, stroke, isLeft: false);
-      canvas.drawCircle(const Offset(-25, -5), 8, Paint()..color = Colors.pink[200]!.withOpacity(0.8)); 
+      canvas.drawCircle(const Offset(-25, -5), 8, Paint()..color = Colors.pink[200]!.withOpacity(0.8));
       canvas.drawCircle(const Offset(25, -5), 8, Paint()..color = Colors.pink[200]!.withOpacity(0.8));
     } else {
       // 기본 땡글 눈
       canvas.drawCircle(const Offset(-16, -10), 4, Paint()..color = Colors.black);
       canvas.drawCircle(const Offset(16, -10), 4, Paint()..color = Colors.black);
     }
-    
+
     // 머즐
     canvas.drawOval(const Rect.fromLTWH(-18, 0, 36, 26), Paint()..color = Colors.white);
     canvas.drawOval(const Rect.fromLTWH(-18, 0, 36, 26), stroke);
     canvas.drawCircle(const Offset(0, 7), 5, Paint()..color = Colors.black); // 코
-    
+
     // 입 (헤벌레)
     canvas.drawArc(const Rect.fromLTWH(-10, 10, 20, 10), 0, math.pi, false, stroke);
 
@@ -588,7 +589,7 @@ class _IdleDogPainter extends CustomPainter {
     canvas.save();
     double startX = isLeft ? -30 : 30;
     canvas.translate(startX, -15);
-    canvas.rotate(isLeft ? 0.4 : -0.4); 
+    canvas.rotate(isLeft ? 0.4 : -0.4);
     final path = Path()
       ..moveTo(-10, -10)..lineTo(10, -10)..lineTo(15, 30)..quadraticBezierTo(0, 45, -15, 30)..close();
     canvas.drawPath(path, fill);

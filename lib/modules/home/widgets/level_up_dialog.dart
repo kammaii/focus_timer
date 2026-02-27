@@ -85,13 +85,7 @@ class _LevelUpDialogState extends State<LevelUpDialog> with TickerProviderStateM
       );
     }
 
-    // 진화 전 동물 모형용 임시 동물 객체
-    Animal preEvolutionAnimal = Animal(
-      id: widget.animal.id,
-      type: widget.animal.type,
-      grade: widget.animal.grade,
-      currentExpMinutes: widget.previousLevel == AnimalLevel.egg ? 0 : 120, // 임시로 경험치를 셋팅해서 레벨만 맞춰줌
-    );
+    // 진화 전 동물 모형용 임시 동물 객체 (사용 안함)
 
     return Scaffold(
       backgroundColor: Colors.black87,
@@ -101,8 +95,8 @@ class _LevelUpDialogState extends State<LevelUpDialog> with TickerProviderStateM
           children: [
             Text(
               _isHatched 
-                ? (widget.currentLevel == AnimalLevel.baby ? "알에서 깨어났어요! 🎉" : "어른으로 성장했어요! 🎉")
-                : (widget.previousLevel == AnimalLevel.egg ? "터치해서 알을 깨워주세요!" : "터치해서 성장을 도와주세요!"),
+                ? "알에서 깨어났어요! 🎉"
+                : "터치해서 알을 깨워주세요!",
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 60),
@@ -132,19 +126,17 @@ class _LevelUpDialogState extends State<LevelUpDialog> with TickerProviderStateM
                         ),
                       _isHatched
                         ? AnimalView(animal: widget.animal, state: TimerState.idle)
-                        : (widget.previousLevel == AnimalLevel.egg 
-                            ? Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  const EggWidget(),
-                                  if (_tapCount > 0) 
-                                    CustomPaint(
-                                      size: const Size(120, 150),
-                                      painter: CrackPainter(_tapCount),
-                                    )
-                                ],
-                              )
-                            : AnimalView(animal: preEvolutionAnimal, state: TimerState.idle)),
+                        : Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const EggWidget(),
+                              if (_tapCount > 0) 
+                                CustomPaint(
+                                  size: const Size(120, 150),
+                                  painter: CrackPainter(_tapCount),
+                                )
+                            ],
+                          ),
                     ],
                   ),
                 ),

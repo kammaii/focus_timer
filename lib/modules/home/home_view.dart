@@ -30,13 +30,28 @@ class HomeView extends GetView<HomeController> {
             tooltip: "상태 강제 변경",
             color: AppColors.textLight,
             onPressed: () {
-              final current = controller.currentState.value;
-              if (current == TimerState.idle) {
-                controller.currentState.value = TimerState.focus;
-              } else if (current == TimerState.focus) {
-                controller.currentState.value = TimerState.rest;
-              } else {
+              final damagotchiCtrl = Get.find<DamagotchiController>();
+              final currentAnimal = damagotchiCtrl.currentAnimal.value;
+              if (currentAnimal == null) return;
+              
+              final currentTimerState = controller.currentState.value;
+
+              if (currentAnimal.level == AnimalLevel.egg) {
+                // 알 -> 정상 (동물 단계 및 수집 가능 레벨로 임시 변경)
+                currentAnimal.currentExpMinutes = 1800;
+                damagotchiCtrl.currentAnimal.refresh();
                 controller.currentState.value = TimerState.idle;
+              } else {
+                if (currentTimerState == TimerState.idle) {
+                  controller.currentState.value = TimerState.focus;
+                } else if (currentTimerState == TimerState.focus) {
+                  controller.currentState.value = TimerState.rest;
+                } else {
+                  // 휴식 -> 알 (경험치 초기화)
+                  currentAnimal.currentExpMinutes = 0;
+                  damagotchiCtrl.currentAnimal.refresh();
+                  controller.currentState.value = TimerState.idle;
+                }
               }
             },
           ),
@@ -49,13 +64,16 @@ class HomeView extends GetView<HomeController> {
               final damagotchiCtrl = Get.find<DamagotchiController>();
               final currentAnimal = damagotchiCtrl.currentAnimal.value;
               if (currentAnimal != null) {
-                final newType = currentAnimal.type == AnimalType.rabbit 
-                    ? AnimalType.dog 
-                    : AnimalType.rabbit;
+                final types = AnimalType.values;
+                final currentIndex = types.indexOf(currentAnimal.type);
+                final nextIndex = (currentIndex + 1) % types.length;
+                final newType = types[nextIndex];
+
                 damagotchiCtrl.currentAnimal.value = Animal(
                   type: newType, 
-                  grade: AnimalGrade.normal,
-                  name: newType == AnimalType.dog ? "임시 강아지" : "임시 토끼",
+                  grade: newType == AnimalType.dog ? AnimalGrade.special : AnimalGrade.normal,
+                  // 알 상태인 경우, 새 동물을 바로 볼 수 있도록 경험치를 1800 수치로 늘림
+                  currentExpMinutes: currentAnimal.level == AnimalLevel.egg ? 1800 : currentAnimal.currentExpMinutes,
                 );
               }
             },

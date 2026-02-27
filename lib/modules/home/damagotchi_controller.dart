@@ -70,24 +70,26 @@ class DamagotchiController extends GetxController {
     
     Animal animal = currentAnimal.value!;
     AnimalLevel previousLevel = animal.level;
+    bool wasReadyToCollect = animal.isReadyToCollect;
     
     animal.addExp(totalMinutes);
     currentAnimal.refresh(); // UI 업데이트
     await saveData();
 
     AnimalLevel currentLevel = animal.level;
+    bool isReadyToCollect = animal.isReadyToCollect;
     
-    // 레벨업 체크
+    // 레벨업 체크 (부화)
     if (previousLevel != currentLevel) {
       _showLevelUpAnimation(animal, previousLevel, currentLevel);
+    }
       
-      // 어른이 되었다면 알 선택 창을 띄우거나 처리
-      if (currentLevel == AnimalLevel.adult) {
-        // 부화 애니메이션 후 띄우기 위해 약간의 딜레이
-        Future.delayed(const Duration(seconds: 3), () {
-          _showNewEggSelection();
-        });
-      }
+    // 수집 기준 도달 체크
+    if (!wasReadyToCollect && isReadyToCollect) {
+      // 레벨업 축하창 같은 애니메이션 후 띄우기 위해 약간의 딜레이
+      Future.delayed(const Duration(seconds: 3), () {
+        _showNewEggSelection();
+      });
     }
   }
   
@@ -105,8 +107,8 @@ class DamagotchiController extends GetxController {
 
   Future<void> acquireNewEgg(AnimalType type, AnimalGrade grade) async {
     if (currentAnimal.value != null) {
-      // 기존 동물을 컬렉션에 추가 (어른인 경우만)
-      if (currentAnimal.value!.isAdult) {
+      // 기존 동물을 컬렉션에 추가 (수집 가능한 경우만)
+      if (currentAnimal.value!.isReadyToCollect) {
         collection.add(currentAnimal.value!);
       }
     }

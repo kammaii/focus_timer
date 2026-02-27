@@ -84,7 +84,7 @@ class CollectionView extends GetView<DamagotchiController> {
                     final isCollected = collection.any((animal) => animal.type == type);
                     
                     // 스페셜 알인지 확인
-                    final isSpecial = [AnimalType.bear, AnimalType.tiger, AnimalType.elephant, AnimalType.dinosaur].contains(type);
+                    final isSpecial = type == AnimalType.dog;
 
                     // 보여줄 임시 동물 모델
                     final animalModel = Animal(type: type, grade: isSpecial ? AnimalGrade.special : AnimalGrade.normal, currentExpMinutes: 1200);
@@ -157,14 +157,15 @@ class CollectionView extends GetView<DamagotchiController> {
   String _getAnimalName(AnimalType type) {
     switch (type) {
       case AnimalType.rabbit: return "토끼";
-      case AnimalType.squirrel: return "다람쥐";
-      case AnimalType.bird: return "작은 새";
-      case AnimalType.bear: return "곰";
-      case AnimalType.tiger: return "호랑이";
-      case AnimalType.elephant: return "코끼리";
-      case AnimalType.dinosaur: return "공룡";
       case AnimalType.dog: return "강아지";
-
+      case AnimalType.cat: return "고양이";
+      case AnimalType.hedgehog: return "고슴도치";
+      case AnimalType.squirrel: return "다람쥐";
+      case AnimalType.bear: return "곰";
+      case AnimalType.dinosaur: return "공룡";
+      case AnimalType.lion: return "사자";
+      case AnimalType.tiger: return "호랑이";
+      case AnimalType.turtle: return "거북이";
     }
   }
 }

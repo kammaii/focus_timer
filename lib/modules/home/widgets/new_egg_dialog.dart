@@ -48,10 +48,22 @@ class NewEggDialog extends StatelessWidget {
     AnimalType selectedType;
     
     if (grade == AnimalGrade.normal) {
-      final normalTypes = [AnimalType.rabbit, AnimalType.squirrel, AnimalType.bird];
+      final normalTypes = [
+        AnimalType.rabbit,
+        AnimalType.cat,
+        AnimalType.squirrel,
+        AnimalType.hedgehog,
+      ];
       selectedType = normalTypes[random.nextInt(normalTypes.length)];
     } else {
-      final specialTypes = [AnimalType.bear, AnimalType.tiger, AnimalType.elephant, AnimalType.dinosaur];
+      final specialTypes = [
+        AnimalType.dog,
+        AnimalType.turtle,
+        AnimalType.tiger,
+        AnimalType.lion,
+        AnimalType.bear,
+        AnimalType.dinosaur,
+      ];
       selectedType = specialTypes[random.nextInt(specialTypes.length)];
     }
     
