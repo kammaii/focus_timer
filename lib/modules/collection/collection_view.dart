@@ -4,6 +4,7 @@ import '../../data/models/animal.dart';
 import '../home/damagotchi_controller.dart';
 import '../home/widgets/animal_view.dart';
 import '../home/home_controller.dart';
+import '../home/widgets/animals/animal_registry.dart';
 import '../../core/theme/app_colors.dart';
 
 class CollectionView extends GetView<DamagotchiController> {
@@ -84,7 +85,7 @@ class CollectionView extends GetView<DamagotchiController> {
                     final isCollected = collection.any((animal) => animal.type == type);
                     
                     // 스페셜 알인지 확인
-                    final isSpecial = type == AnimalType.dog;
+                    final isSpecial = AnimalRegistry.getGrade(type) == AnimalGrade.special;
 
                     // 보여줄 임시 동물 모델
                     final animalModel = Animal(type: type, grade: isSpecial ? AnimalGrade.special : AnimalGrade.normal, currentExpMinutes: 1200);
@@ -101,7 +102,10 @@ class CollectionView extends GetView<DamagotchiController> {
                                 ? Stack(
                                   alignment: Alignment.center,
                                   children: [
-                                    AnimalView(animal: animalModel, state: TimerState.idle),
+                                    Transform.scale(
+                                      scale: 0.65,
+                                      child: AnimalView(animal: animalModel, state: TimerState.idle),
+                                    ),
                                     // 약간의 애니메이션을 위해 투명색으로 감싸줌
                                     Container(color: Colors.transparent),
                                   ],
@@ -114,7 +118,10 @@ class CollectionView extends GetView<DamagotchiController> {
                                       0, 0, 0, 0, 0,
                                       0, 0, 0, 0.4, 0, // 알파값을 조절하여 그림자처럼 표시
                                     ]),
-                                    child: AnimalView(animal: animalModel, state: TimerState.idle),
+                                    child: Transform.scale(
+                                      scale: 0.65,
+                                      child: AnimalView(animal: animalModel, state: TimerState.idle),
+                                    ),
                                   ),
                             ),
                           ),
