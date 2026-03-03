@@ -6,6 +6,7 @@ import 'home_controller.dart';
 import 'damagotchi_controller.dart';
 import 'widgets/animal_view.dart';
 import 'widgets/night_sky_background.dart';
+import 'widgets/new_egg_dialog.dart';
 import '../../core/theme/app_colors.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -24,67 +25,13 @@ class HomeView extends GetView<HomeController> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
-          // 상태 전환 테스터
-          IconButton(
-            icon: const Icon(Icons.sync),
-            tooltip: "상태 강제 변경",
-            color: AppColors.textLight,
-            onPressed: () {
-              final damagotchiCtrl = Get.find<DamagotchiController>();
-              final currentAnimal = damagotchiCtrl.currentAnimal.value;
-              if (currentAnimal == null) return;
-              
-              final currentTimerState = controller.currentState.value;
-
-              if (currentAnimal.level == AnimalLevel.egg) {
-                // 알 -> 정상 (동물 단계 및 수집 가능 레벨로 임시 변경)
-                currentAnimal.currentExpMinutes = 1800;
-                damagotchiCtrl.currentAnimal.refresh();
-                controller.currentState.value = TimerState.idle;
-              } else {
-                if (currentTimerState == TimerState.idle) {
-                  controller.currentState.value = TimerState.focus;
-                } else if (currentTimerState == TimerState.focus) {
-                  controller.currentState.value = TimerState.rest;
-                } else {
-                  // 휴식 -> 알 (경험치 초기화)
-                  currentAnimal.currentExpMinutes = 0;
-                  damagotchiCtrl.currentAnimal.refresh();
-                  controller.currentState.value = TimerState.idle;
-                }
-              }
-            },
-          ),
-          // 동물 전환 테스터
-          IconButton(
-            icon: const Icon(Icons.pets),
-            tooltip: "테스트 동물 변경",
-            color: AppColors.textLight,
-            onPressed: () {
-              final damagotchiCtrl = Get.find<DamagotchiController>();
-              final currentAnimal = damagotchiCtrl.currentAnimal.value;
-              if (currentAnimal != null) {
-                final types = AnimalType.values;
-                final currentIndex = types.indexOf(currentAnimal.type);
-                final nextIndex = (currentIndex + 1) % types.length;
-                final newType = types[nextIndex];
-
-                damagotchiCtrl.currentAnimal.value = Animal(
-                  type: newType, 
-                  grade: newType == AnimalType.dog ? AnimalGrade.special : AnimalGrade.normal,
-                  // 알 상태인 경우, 새 동물을 바로 볼 수 있도록 경험치를 1800 수치로 늘림
-                  currentExpMinutes: currentAnimal.level == AnimalLevel.egg ? 1800 : currentAnimal.currentExpMinutes,
-                );
-              }
-            },
-          ),
           Obx(() {
             if (controller.currentState.value == TimerState.idle) {
               return IconButton(
-                icon: const Icon(Icons.speed),
-                onPressed: controller.startQuickTest,
-                tooltip: "빠른 테스트 (5초 집중 -> 5초 휴식)",
-                color: AppColors.primary,
+                icon: const Icon(Icons.settings),
+                onPressed: () => Get.toNamed('/settings'),
+                tooltip: "설정",
+                color: AppColors.textLight,
               );
             }
             return const SizedBox.shrink();
@@ -135,20 +82,20 @@ class HomeView extends GetView<HomeController> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  // 디바이스별 반응형 크기 계산
+                  // 디바이스별 반응형 크기 계산 (공간을 좀 더 넓게 쓰도록 조정)
                   final availableHeight = constraints.maxHeight;
-                  final radius = (availableHeight * 0.2).clamp(100.0, 150.0);
-                  final lottieSize = (availableHeight * 0.25).clamp(120.0, 200.0);
-                  final iconSize = (availableHeight * 0.2).clamp(50.0, 80.0);
-                  final timerFontSize = (availableHeight * 0.08).clamp(36.0, 64.0);
-                  final spacing = (availableHeight * 0.04).clamp(10.0, 40.0);
+                  final radius = (availableHeight * 0.18).clamp(90.0, 140.0);
+                  final lottieSize = (availableHeight * 0.22).clamp(110.0, 180.0);
+                  final iconSize = (availableHeight * 0.15).clamp(60.0, 80.0);
+                  final timerFontSize = (availableHeight * 0.08).clamp(36.0, 56.0);
+                  final spacing = (availableHeight * 0.05).clamp(20.0, 50.0);
 
                   return SingleChildScrollView(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minHeight: availableHeight),
                       child: Center(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             // Circle Progress Timer
                             Obx(() => CircularPercentIndicator(
@@ -180,7 +127,7 @@ class HomeView extends GetView<HomeController> {
                             // Damagotchi Animal View
                             Obx(() {
                               final damagotchiController = Get.find<DamagotchiController>();
-                              final animal = damagotchiController.currentAnimal.value;
+                              final animal = damagotchiController.activeAnimal;
                               
                               if (animal == null) return const SizedBox.shrink();
 
@@ -196,15 +143,61 @@ class HomeView extends GetView<HomeController> {
                                       state: controller.currentState.value,
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    animal.name,
-                                    style: TextStyle(
-                                      fontSize: (availableHeight * 0.03).clamp(16.0, 24.0),
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textLight,
+                                  if (animal.level != AnimalLevel.egg) ...[
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      animal.name,
+                                      style: TextStyle(
+                                        fontSize: (availableHeight * 0.03).clamp(16.0, 24.0),
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textLight,
+                                      ),
                                     ),
-                                  ),
+                                    if (animal.isReadyToCollect && !damagotchiController.isCompanionMode) ...[
+                                      const SizedBox(height: 8),
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          Get.dialog(const NewEggDialog(), barrierDismissible: false);
+                                        },
+                                        icon: const Icon(Icons.egg, size: 18),
+                                        label: const Text("새 알 받기"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.amber,
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                  if (damagotchiController.isCompanionMode) ...[
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.favorite, size: 14, color: AppColors.primary),
+                                          const SizedBox(width: 4),
+                                          const Text("동반 모드", style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () {
+                                              damagotchiController.clearCompanion();
+                                              Get.snackbar("알림", "알 키우기로 복귀했습니다.");
+                                            },
+                                            child: const Icon(Icons.cancel, size: 16, color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               );
                             }),
@@ -356,7 +349,7 @@ class HomeView extends GetView<HomeController> {
                                   Color(0xFF222222), BlendMode.srcATop),
                                 child: Obx(() {
                                   final damagotchiController = Get.find<DamagotchiController>();
-                                  final animal = damagotchiController.currentAnimal.value;
+                                  final animal = damagotchiController.activeAnimal;
                                   if (animal == null) return const SizedBox.shrink();
 
                                   return Column(
@@ -371,16 +364,18 @@ class HomeView extends GetView<HomeController> {
                                           state: controller.currentState.value,
                                         ),
                                       ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        animal.name,
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white54,
-                                          decoration: TextDecoration.none,
+                                      if (animal.level != AnimalLevel.egg) ...[
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          animal.name,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white54,
+                                            decoration: TextDecoration.none,
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ],
                                   );
                                 }),

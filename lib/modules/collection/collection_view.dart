@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../data/models/animal.dart';
 import '../home/damagotchi_controller.dart';
 import '../home/widgets/animal_view.dart';
@@ -83,18 +84,24 @@ class CollectionView extends GetView<DamagotchiController> {
                   itemBuilder: (context, index) {
                     final type = AnimalType.values[index];
                     final isCollected = collection.any((animal) => animal.type == type);
+                    Animal? collectedAnimal;
+                    if (isCollected) {
+                      collectedAnimal = collection.firstWhere((animal) => animal.type == type);
+                    }
                     
                     // 스페셜 알인지 확인
                     final isSpecial = AnimalRegistry.getGrade(type) == AnimalGrade.special;
 
                     // 보여줄 임시 동물 모델
-                    final animalModel = Animal(type: type, grade: isSpecial ? AnimalGrade.special : AnimalGrade.normal, currentExpMinutes: 1200);
+                    final animalModel = collectedAnimal ?? Animal(type: type, grade: isSpecial ? AnimalGrade.special : AnimalGrade.normal, currentExpMinutes: 1200);
 
-                    return Card(
-                      elevation: 5,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      child: Stack(
-                        children: [
+                    return GestureDetector(
+                      onTap: isCollected ? () => _showAnimalDetails(context, collectedAnimal!) : null,
+                      child: Card(
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        child: Stack(
+                          children: [
                           Center(
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -150,7 +157,7 @@ class CollectionView extends GetView<DamagotchiController> {
                             ),
                         ],
                       ),
-                    );
+                    ));
                   },
                 ),
               ),
@@ -174,5 +181,108 @@ class CollectionView extends GetView<DamagotchiController> {
       case AnimalType.tiger: return "호랑이";
       case AnimalType.turtle: return "거북이";
     }
+  }
+
+  void _showAnimalDetails(BuildContext context, Animal animal) {
+    final hours = animal.currentExpMinutes ~/ 60;
+    final minutes = animal.currentExpMinutes % 60;
+    
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "나의 ${animal.name}",
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 150,
+                child: Transform.scale(
+                  scale: 0.9,
+                  child: AnimalView(animal: animal, state: TimerState.idle),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      "함께 집중한 시간",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "${hours}시간 ${minutes}분",
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.share, size: 18),
+                      label: const Text("자랑하기", style: TextStyle(fontSize: 14)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Share.share('나는 포커스 타이머에서 ${animal.name}와(과) 함께 총 ${hours}시간 ${minutes}분을 집중했어요! ⏱️✨');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.favorite, size: 18),
+                      label: const Text("함께 집중", style: TextStyle(fontSize: 14)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        controller.setCompanion(animal);
+                        Get.back(); // 도감 다이얼로그 닫기
+                        Get.back(); // 도감 뷰 자체 닫기 -> 홈으로 이동
+                        Get.snackbar(
+                          "동반 모드 시작",
+                          "${animal.name}와(과) 함께 집중을 시작합니다!",
+                          snackPosition: SnackPosition.TOP,
+                          backgroundColor: Colors.white,
+                          colorText: AppColors.text,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

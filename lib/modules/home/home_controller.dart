@@ -100,7 +100,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void startRest() {
     currentState.value = TimerState.rest;
     isPaused.value = false;
-    currentTotalSeconds.value = isTestMode ? 5 : settings.restMinutes.value * 60;
+    currentTotalSeconds.value = settings.restMinutes.value * 60;
     remainingSeconds.value = currentTotalSeconds.value;
     _startCountdown();
     resetAmbientTimer();
@@ -144,7 +144,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
       // Damagotchi 다이얼로그 띄우고 보상 기다리기 (타이머는 일시정지 상태처럼 대기)
       final damagotchiController = Get.find<DamagotchiController>();
-      int baseExp = isTestMode ? 60 : settings.focusMinutes.value;
+      int baseExp = settings.focusMinutes.value; // 집중한 시간(분)만큼 경험치 획득
       int finalExp = await damagotchiController.showExpProgressAndGetReward(baseExp);
       
       // 실제 반영

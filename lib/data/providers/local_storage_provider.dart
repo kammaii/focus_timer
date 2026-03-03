@@ -71,6 +71,7 @@ class LocalStorageProvider {
 
   Future<DamagotchiData> loadDamagotchiData() async {
     final prefs = await _prefs;
+    
     final String? dataStr = prefs.getString(_damagotchiKey);
     
     if (dataStr != null) {

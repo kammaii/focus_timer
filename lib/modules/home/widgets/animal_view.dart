@@ -12,7 +12,7 @@ class AnimalView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (animal.level == AnimalLevel.egg) {
-      return const EggWidget();
+      return EggWidget(grade: animal.grade);
     }
     
     return AnimalRegistry.getWidget(animal.type, state);
@@ -20,26 +20,32 @@ class AnimalView extends StatelessWidget {
 }
 
 class EggWidget extends StatelessWidget {
-  const EggWidget({super.key});
+  final AnimalGrade grade;
+  const EggWidget({super.key, required this.grade});
 
   @override
   Widget build(BuildContext context) {
     // 둥근 알 모양
     return CustomPaint(
       size: const Size(120, 150),
-      painter: EggPainter(),
+      painter: EggPainter(grade: grade),
     );
   }
 }
 
 class EggPainter extends CustomPainter {
+  final AnimalGrade grade;
+  EggPainter({required this.grade});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.orange[100]!;
+    final isSpecial = grade == AnimalGrade.special;
+
+    final paint = Paint()..color = isSpecial ? Colors.amber[200]! : Colors.orange[100]!;
     final strokePaint = Paint()
-      ..color = Colors.brown
+      ..color = isSpecial ? Colors.orange[900]! : Colors.brown
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
+      ..strokeWidth = isSpecial ? 4 : 3;
 
     // 타원형 알 모양
     final rect = Rect.fromCenter(
@@ -56,11 +62,26 @@ class EggPainter extends CustomPainter {
     canvas.drawPath(path, strokePaint);
     
     // 무늬
-    canvas.drawCircle(Offset(size.width / 2, size.height * 0.4), 10, Paint()..color = Colors.orange[200]!);
-    canvas.drawCircle(Offset(size.width * 0.3, size.height * 0.6), 15, Paint()..color = Colors.orange[200]!);
-    canvas.drawCircle(Offset(size.width * 0.7, size.height * 0.65), 12, Paint()..color = Colors.orange[200]!);
+    final patternColor = isSpecial ? Colors.amber[600]! : Colors.orange[200]!;
+    
+    if (isSpecial) {
+      // 스페셜 무늬
+      canvas.drawCircle(Offset(size.width / 2, size.height * 0.4), 16, Paint()..color = patternColor);
+      canvas.drawCircle(Offset(size.width * 0.3, size.height * 0.6), 20, Paint()..color = patternColor);
+      canvas.drawCircle(Offset(size.width * 0.7, size.height * 0.65), 14, Paint()..color = patternColor);
+      
+      // 반짝이는 효과
+      final starPaint = Paint()..color = Colors.white.withOpacity(0.8);
+      canvas.drawCircle(Offset(size.width * 0.35, size.height * 0.25), 6, starPaint);
+      canvas.drawCircle(Offset(size.width * 0.65, size.height * 0.35), 4, starPaint);
+    } else {
+      // 일반 무늬
+      canvas.drawCircle(Offset(size.width / 2, size.height * 0.4), 10, Paint()..color = patternColor);
+      canvas.drawCircle(Offset(size.width * 0.3, size.height * 0.6), 15, Paint()..color = patternColor);
+      canvas.drawCircle(Offset(size.width * 0.7, size.height * 0.65), 12, Paint()..color = patternColor);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant EggPainter oldDelegate) => oldDelegate.grade != grade;
 }

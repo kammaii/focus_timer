@@ -50,21 +50,25 @@ class Animal {
   }
 
   AnimalLevel get level {
-    // 일반알: 알 -> 동물 (2시간 = 120분)
-    // 스페셜알: 알 -> 동물 (5시간 = 300분)
     final isSpecial = grade == AnimalGrade.special;
-    final animalThreshold = isSpecial ? 300 : 120;
-
+    final animalThreshold = isSpecial ? 180 : 120; // 3h vs 2h
     if (currentExpMinutes >= animalThreshold) return AnimalLevel.animal;
     return AnimalLevel.egg;
+  }
+
+  String get displayName {
+    if (level == AnimalLevel.egg) {
+      return grade == AnimalGrade.special ? '스페셜알' : '일반알';
+    }
+    return name;
   }
 
   int get maxExpForCurrentLevel {
     final isSpecial = grade == AnimalGrade.special;
     if (level == AnimalLevel.egg) {
-      return isSpecial ? 300 : 120;
+      return isSpecial ? 180 : 120;
     } else {
-      return isSpecial ? 1800 : 1200;
+      return isSpecial ? 1500 : 1200;
     }
   }
 
@@ -73,7 +77,7 @@ class Animal {
     if (level == AnimalLevel.egg) {
       return 0;
     } else {
-      return isSpecial ? 300 : 120;
+      return isSpecial ? 180 : 120;
     }
   }
 
@@ -91,7 +95,7 @@ class Animal {
 
   bool get isReadyToCollect {
     final isSpecial = grade == AnimalGrade.special;
-    final collectThreshold = isSpecial ? 1800 : 1200;
+    final collectThreshold = isSpecial ? 1500 : 1200;
     return currentExpMinutes >= collectThreshold;
   }
 

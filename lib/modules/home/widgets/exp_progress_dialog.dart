@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:confetti/confetti.dart';
+import '../../../core/services/ad_service.dart';
 import 'dart:math' as math;
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/animal.dart';
@@ -90,8 +91,9 @@ class _ExpProgressDialogState extends State<ExpProgressDialog> with TickerProvid
     int totalAddedExp = widget.baseExp * multiplier;
 
     if (multiplier > 1) {
-      // TODO: 실제 광고 시청 연동
-      Get.snackbar("광고 시청 완료!", "경험치를 2배로 획득했습니다! 🎉", snackPosition: SnackPosition.TOP);
+      await AdService().showRewardedAd(onRewardEarned: () {
+        Get.snackbar("광고 시청 완료!", "경험치를 2배로 획득했습니다! 🎉", snackPosition: SnackPosition.TOP);
+      });
     }
     
     // 폭죽 터트리기
@@ -139,7 +141,7 @@ class _ExpProgressDialogState extends State<ExpProgressDialog> with TickerProvid
             ),
             const SizedBox(height: 10),
             Text(
-              "${widget.animal.name}이(가) 경험치를 얻었어요",
+              "${widget.animal.displayName}이(가) 경험치를 얻었어요",
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
@@ -184,7 +186,7 @@ class _ExpProgressDialogState extends State<ExpProgressDialog> with TickerProvid
                 AnimatedBuilder(
                   animation: _progressController,
                   builder: (context, child) {
-                    final currentVal = _progressController.isAnimating ? _progressAnimation.value : _initialProgress;
+                    final currentVal = _isClaimed ? _progressAnimation.value : _initialProgress;
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Container(

@@ -3,16 +3,19 @@ import 'animal.dart';
 class DamagotchiData {
   Animal? currentAnimal;
   List<Animal> collection;
+  String? activeCompanionId;
 
   DamagotchiData({
     this.currentAnimal,
     List<Animal>? collection,
+    this.activeCompanionId,
   }) : collection = collection ?? [];
 
   Map<String, dynamic> toJson() {
     return {
       'currentAnimal': currentAnimal?.toJson(),
       'collection': collection.map((a) => a.toJson()).toList(),
+      'activeCompanionId': activeCompanionId,
     };
   }
 
@@ -26,6 +29,7 @@ class DamagotchiData {
               ?.map((a) => Animal.fromJson(a as Map<String, dynamic>))
               .toList() ??
           [],
+      activeCompanionId: json['activeCompanionId'],
     );
   }
 }

@@ -95,7 +95,7 @@ class _LevelUpDialogState extends State<LevelUpDialog> with TickerProviderStateM
           children: [
             Text(
               _isHatched 
-                ? "알에서 깨어났어요! 🎉"
+                ? "${widget.animal.name}이(가) 알에서 태어났습니다! 🎉"
                 : "터치해서 알을 깨워주세요!",
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
             ),
@@ -125,14 +125,14 @@ class _LevelUpDialogState extends State<LevelUpDialog> with TickerProviderStateM
                           child: Icon(Icons.star, color: Colors.amber, size: 250),
                         ),
                       _isHatched
-                        ? AnimalView(animal: widget.animal, state: TimerState.idle)
+                        ? SizedBox.expand(child: AnimalView(animal: widget.animal, state: TimerState.idle))
                         : Stack(
                             alignment: Alignment.center,
+                            fit: StackFit.expand,
                             children: [
-                              const EggWidget(),
+                              EggWidget(grade: widget.animal.grade),
                               if (_tapCount > 0) 
                                 CustomPaint(
-                                  size: const Size(120, 150),
                                   painter: CrackPainter(_tapCount),
                                 )
                             ],
@@ -173,25 +173,31 @@ class CrackPainter extends CustomPainter {
       ..strokeWidth = 2.5;
 
     final path = Path();
+    
+    // 이전에 120x150 캔버스에 맞춰졌던 좌표를 현재 size에 비례하여 변환
+    double h(double val) => val * size.height / 150;
+    double w(double val) => val * size.width / 120;
+    final cx = size.width / 2;
+
     if (tapCount >= 1) {
-      path.moveTo(size.width / 2, 20);
-      path.lineTo(size.width / 2 - 15, 40);
+      path.moveTo(cx, h(20));
+      path.lineTo(cx - w(15), h(40));
     }
     if (tapCount >= 2) {
-      path.lineTo(size.width / 2 + 10, 60);
-      path.lineTo(size.width / 2 - 20, 80);
+      path.lineTo(cx + w(10), h(60));
+      path.lineTo(cx - w(20), h(80));
     }
     if (tapCount >= 3) {
-      path.lineTo(size.width / 2 + 15, 110);
-      path.lineTo(size.width / 2 - 10, 130);
+      path.lineTo(cx + w(15), h(110));
+      path.lineTo(cx - w(10), h(130));
     }
     if (tapCount >= 4) {
       // 옆면 추가 파편
-      path.moveTo(size.width / 2 - 15, 40);
-      path.lineTo(size.width / 2 - 40, 50);
+      path.moveTo(cx - w(15), h(40));
+      path.lineTo(cx - w(40), h(50));
       
-      path.moveTo(size.width / 2 + 10, 60);
-      path.lineTo(size.width / 2 + 35, 75);
+      path.moveTo(cx + w(10), h(60));
+      path.lineTo(cx + w(35), h(75));
     }
 
     canvas.drawPath(path, paint);

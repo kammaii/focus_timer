@@ -18,6 +18,16 @@ class DamagotchiController extends GetxController {
   // 상태 변수
   var currentAnimal = Rxn<Animal>();
   var collection = <Animal>[].obs;
+  var activeCompanionId = RxnString(null);
+
+  Animal? get activeAnimal {
+    if (activeCompanionId.value != null) {
+      return collection.firstWhereOrNull((a) => a.id == activeCompanionId.value);
+    }
+    return currentAnimal.value;
+  }
+
+  bool get isCompanionMode => activeCompanionId.value != null;
 
   @override
   void onInit() {
@@ -37,23 +47,35 @@ class DamagotchiController extends GetxController {
     damagotchiData.value = data;
     currentAnimal.value = data.currentAnimal;
     collection.value = data.collection;
+    activeCompanionId.value = data.activeCompanionId;
   }
 
   Future<void> saveData() async {
     damagotchiData.value.currentAnimal = currentAnimal.value;
     damagotchiData.value.collection = collection.toList();
+    damagotchiData.value.activeCompanionId = activeCompanionId.value;
     await storageProvider.saveDamagotchiData(damagotchiData.value);
+  }
+
+  Future<void> setCompanion(Animal animal) async {
+    activeCompanionId.value = animal.id;
+    await saveData();
+  }
+
+  Future<void> clearCompanion() async {
+    activeCompanionId.value = null;
+    await saveData();
   }
 
   // 다이얼로그를 띄우고 보상을 받은 후의 총 경험치를 반환하는 함수
   Future<int> showExpProgressAndGetReward(int baseMinutes) async {
-    if (currentAnimal.value == null) return baseMinutes;
+    if (activeAnimal == null) return baseMinutes;
 
     final completer = Completer<int>();
 
     Get.dialog(
       ExpProgressDialog(
-        animal: currentAnimal.value!,
+        animal: activeAnimal!,
         baseExp: baseMinutes,
         onRewardClaimed: (totalExp) {
           completer.complete(totalExp);
@@ -66,9 +88,20 @@ class DamagotchiController extends GetxController {
   }
 
   Future<void> gainExpAfterReward(int totalMinutes) async {
-    if (currentAnimal.value == null) return;
+    if (activeAnimal == null) return;
     
-    Animal animal = currentAnimal.value!;
+    Animal animal = activeAnimal!;
+    
+    // 컴패니언 모드인 경우
+    if (isCompanionMode) {
+      animal.addExp(totalMinutes);
+      // collection 내부의 해당 동물이 업데이트되도록 refresh
+      collection.refresh();
+      await saveData();
+      return; // 컴패니언은 레벨업이나 알 획득 로직을 건너뜀
+    }
+
+    // 알 키우기 모드인 경우
     AnimalLevel previousLevel = animal.level;
     bool wasReadyToCollect = animal.isReadyToCollect;
     
