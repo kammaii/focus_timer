@@ -24,19 +24,6 @@ class HomeView extends GetView<HomeController> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        actions: [
-          Obx(() {
-            if (controller.currentState.value == TimerState.idle) {
-              return IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () => Get.toNamed('/settings'),
-                tooltip: "설정",
-                color: AppColors.textLight,
-              );
-            }
-            return const SizedBox.shrink();
-          }),
-        ],
       ),
       body: SafeArea(
         child: Column(
@@ -143,6 +130,28 @@ class HomeView extends GetView<HomeController> {
                                       state: controller.currentState.value,
                                     ),
                                   ),
+                                  // XP Progress Bar
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 100.0, vertical: 8.0),
+                                    child: Column(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: LinearProgressIndicator(
+                                            value: animal.currentLevelProgress,
+                                            minHeight: 8,
+                                            backgroundColor: Colors.grey[200],
+                                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${animal.currentExpMinutes} / ${animal.maxExpForCurrentLevel} EXP",
+                                          style: const TextStyle(fontSize: 12, color: AppColors.textLight, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   if (animal.level != AnimalLevel.egg) ...[
                                     const SizedBox(height: 12),
                                     Text(
@@ -229,7 +238,7 @@ class HomeView extends GetView<HomeController> {
                                         Get.dialog(
                                           AlertDialog(
                                             title: const Text("타이머 종료", style: TextStyle(fontWeight: FontWeight.bold)),
-                                            content: const Text("정말 진행 중인 타이머를 종료하시겠습니까?\n현재 집중 기록은 저장되지 않습니다."),
+                                            content: const Text("정말 진행 중인 타이머를 종료하시겠습니까?\n1분 이상 집중했다면 해당 시간만큼의 경험치가 저장됩니다."),
                                             actions: [
                                               TextButton(
                                                 onPressed: () => Get.back(),
@@ -250,6 +259,16 @@ class HomeView extends GetView<HomeController> {
                                       icon: const Icon(Icons.stop_circle),
                                       iconSize: iconSize * 0.9,
                                       color: AppColors.error,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    // Test Finish Button
+                                    TextButton(
+                                      onPressed: controller.forceFinishFocus,
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.black12,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      child: const Text("테스트 완료", style: TextStyle(fontSize: 10, color: Colors.grey)),
                                     ),
                                   ],
                                 );

@@ -23,7 +23,7 @@ class MainScreen extends StatelessWidget {
   final List<Widget> pages = [
     const HomeView(),
     const RecordsView(),
-    const CollectionView(),
+    CollectionView(),
     SettingsView(),
   ];
 

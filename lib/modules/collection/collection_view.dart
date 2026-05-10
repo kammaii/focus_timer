@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../../data/models/animal.dart';
 import '../home/damagotchi_controller.dart';
 import '../home/widgets/animal_view.dart';
@@ -9,7 +12,9 @@ import '../home/widgets/animals/animal_registry.dart';
 import '../../core/theme/app_colors.dart';
 
 class CollectionView extends GetView<DamagotchiController> {
-  const CollectionView({super.key});
+  CollectionView({super.key});
+
+  final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
   Widget build(BuildContext context) {
@@ -100,64 +105,79 @@ class CollectionView extends GetView<DamagotchiController> {
                       child: Card(
                         elevation: 5,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        child: Stack(
-                          children: [
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: isCollected
-                                ? Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Transform.scale(
-                                      scale: 0.65,
-                                      child: AnimalView(animal: animalModel, state: TimerState.idle),
-                                    ),
-                                    // 약간의 애니메이션을 위해 투명색으로 감싸줌
-                                    Container(color: Colors.transparent),
-                                  ],
-                                )
-                                // 실루엣 표시 (ColorFiltered 사용)
-                                : ColorFiltered(
-                                    colorFilter: const ColorFilter.matrix([
-                                      0, 0, 0, 0, 0,
-                                      0, 0, 0, 0, 0,
-                                      0, 0, 0, 0, 0,
-                                      0, 0, 0, 0.4, 0, // 알파값을 조절하여 그림자처럼 표시
-                                    ]),
-                                    child: Transform.scale(
-                                      scale: 0.65,
-                                      child: AnimalView(animal: animalModel, state: TimerState.idle),
-                                    ),
-                                  ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 10,
-                            left: 0,
-                            right: 0,
-                            child: Text(
-                              isCollected ? _getAnimalName(type) : "???",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                          ),
-                          if (isSpecial)
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber,
-                                  borderRadius: BorderRadius.circular(10),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: isCollected
+                                    ? Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Transform.scale(
+                                          scale: 0.65,
+                                          child: AnimalView(animal: animalModel, state: TimerState.idle),
+                                        ),
+                                        // 약간의 애니메이션을 위해 투명색으로 감싸줌
+                                        Container(color: Colors.transparent),
+                                      ],
+                                    )
+                                    // 실루엣 표시 (ColorFiltered 사용)
+                                    : ColorFiltered(
+                                        colorFilter: const ColorFilter.matrix([
+                                          0, 0, 0, 0, 0,
+                                          0, 0, 0, 0, 0,
+                                          0, 0, 0, 0, 0,
+                                          0, 0, 0, 0.4, 0, // 알파값을 조절하여 그림자처럼 표시
+                                        ]),
+                                        child: Transform.scale(
+                                          scale: 0.65,
+                                          child: AnimalView(animal: animalModel, state: TimerState.idle),
+                                        ),
+                                      ),
                                 ),
-                                child: const Text("스페셜", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                               ),
-                            ),
-                        ],
-                      ),
-                    ));
+                              Positioned(
+                                bottom: 10,
+                                left: 0,
+                                right: 0,
+                                child: Text(
+                                  isCollected ? _getAnimalName(type) : "???",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ),
+                              if (isSpecial)
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text("스페셜", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              // Card XP Progress Bar at the top (Moved to last to be on top)
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: LinearProgressIndicator(
+                                  value: isCollected ? animalModel.currentLevelProgress : 0,
+                                  minHeight: 6,
+                                  backgroundColor: Colors.black.withOpacity(0.05),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    isCollected ? AppColors.primary : Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),                    )));
                   },
                 ),
               ),
@@ -246,9 +266,7 @@ class CollectionView extends GetView<DamagotchiController> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      onPressed: () {
-                        Share.share('나는 포커스 타이머에서 ${animal.name}와(과) 함께 총 ${hours}시간 ${minutes}분을 집중했어요! ⏱️✨');
-                      },
+                      onPressed: () => _shareAnimalImage(animal),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -282,6 +300,123 @@ class CollectionView extends GetView<DamagotchiController> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _shareAnimalImage(Animal animal) async {
+    final hours = animal.currentExpMinutes ~/ 60;
+    final minutes = animal.currentExpMinutes % 60;
+    
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      // 캡처용 위젯 생성 및 안정성 보강 (Material/Directionality 추가)
+      final widget = Material(
+        color: Colors.transparent,
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: _buildShareCard(animal, hours, minutes),
+        ),
+      );
+      
+      final image = await _screenshotController.captureFromWidget(
+        widget,
+        context: Get.context,
+        pixelRatio: 2.0, // 고해상도
+        delay: const Duration(milliseconds: 500), // 위젯 렌더링 대기 시간 증가
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/share_animal.png').create();
+      await file.writeAsBytes(image);
+
+      if (Get.isDialogOpen ?? false) Get.back(); // 로딩 닫기
+
+      // 스토어 링크 설정
+      String storeLink = "";
+      if (Platform.isAndroid) {
+        storeLink = "https://play.google.com/store/apps";
+      } else if (Platform.isIOS) {
+        storeLink = "https://apps.apple.com/app";
+      }
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: '나는 포커스 타이머에서 ${animal.name}와(과) 함께 총 ${hours}시간 ${minutes}분을 집중했어요! ⏱️✨\n\n앱 확인하기: $storeLink',
+      );
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back(); // 로딩 닫기
+      debugPrint("Error generating share image: $e");
+      Get.snackbar("에러", "공유 이미지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    }
+  }
+
+  Widget _buildShareCard(Animal animal, int hours, int minutes) {
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.auto_awesome, color: Colors.amber, size: 40),
+          const SizedBox(height: 10),
+          const Text(
+            "집중 완료!",
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.text, decoration: TextDecoration.none),
+          ),
+          const SizedBox(height: 30),
+          Container(
+            height: 180,
+            width: 180,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Transform.scale(
+                scale: 1.2,
+                child: AnimalView(animal: animal, state: TimerState.idle),
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          Text(
+            "나의 ${animal.name}",
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.text, decoration: TextDecoration.none),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              "누적 집중: ${hours}시간 ${minutes}분",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary, decoration: TextDecoration.none),
+            ),
+          ),
+          const SizedBox(height: 40),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.timer_outlined, color: Colors.grey, size: 16),
+              SizedBox(width: 5),
+              Text(
+                "포커스 타이머",
+                style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.normal, decoration: TextDecoration.none),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

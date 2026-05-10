@@ -68,7 +68,7 @@ class Animal {
     if (level == AnimalLevel.egg) {
       return isSpecial ? 180 : 120;
     } else {
-      return isSpecial ? 1500 : 1200;
+      return isSpecial ? 1200 : 960;
     }
   }
 
@@ -95,7 +95,7 @@ class Animal {
 
   bool get isReadyToCollect {
     final isSpecial = grade == AnimalGrade.special;
-    final collectThreshold = isSpecial ? 1500 : 1200;
+    final collectThreshold = isSpecial ? 1200 : 960;
     return currentExpMinutes >= collectThreshold;
   }
 

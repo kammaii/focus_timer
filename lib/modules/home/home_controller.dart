@@ -118,6 +118,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     });
   }
 
+  void forceFinishFocus() {
+    if (currentState.value != TimerState.idle) {
+      remainingSeconds.value = 0;
+      _timer?.cancel();
+      _onTimeFinished();
+    }
+  }
+
   void _playSound(String soundType, TimerState state) async {
     if (soundType == 'silent') return;
     String filename = soundType;
@@ -153,7 +161,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       if (currentCycle.value < (isTestMode ? 2 : settings.repeatCount.value)) {
         startRest();
       } else {
-        stopTimer();
+        stopTimer(showReward: false); // 이미 보상을 받았으므로 보상 팝업 제외
         currentCycle.value = 1;
         Get.snackbar("완료!", "모든 집중 사이클을 완료했습니다! 🎉", snackPosition: SnackPosition.BOTTOM);
       }
@@ -165,18 +173,46 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     resetAmbientTimer();
   }
 
-  void stopTimer() {
+  void stopTimer({bool showReward = true}) async {
+    // 1. Calculate elapsed focus time before resetting
+    final int elapsedSeconds = currentTotalSeconds.value - remainingSeconds.value;
+    final bool wasFocus = currentState.value == TimerState.focus;
+    final String category = selectedCategory.value;
+
+    // 2. Stop everything immediately
     _timer?.cancel();
     _audioPlayer.stop();
-    currentState.value = TimerState.idle;
-    isTestMode = false;
-    isPaused.value = false;
-    currentTotalSeconds.value = 0;
-    currentCycle.value = 1;
-    _resetTimer();
     isAmbientMode.value = false;
     _ambientTimer?.cancel();
     WakelockPlus.disable();
+
+    // 3. Reset state
+    currentState.value = TimerState.idle;
+    isPaused.value = false;
+    currentCycle.value = 1;
+
+    // 4. Handle partial reward if conditions met (min 1 minute)
+    if (showReward && wasFocus && elapsedSeconds >= 60) {
+      int focusMinutes = elapsedSeconds ~/ 60;
+      
+      // Save partial record
+      records.addRecord(elapsedSeconds, category);
+      
+      // Play sound
+      _playSound(settings.focusEndSound.value, TimerState.focus);
+
+      // Show XP Progress Dialog
+      final damagotchiController = Get.find<DamagotchiController>();
+      int finalExp = await damagotchiController.showExpProgressAndGetReward(focusMinutes);
+      
+      // Apply reward
+      await damagotchiController.gainExpAfterReward(finalExp);
+    }
+
+    // 5. Cleanup
+    isTestMode = false;
+    currentTotalSeconds.value = 0;
+    _resetTimer();
   }
   
   void pauseTimer() {
