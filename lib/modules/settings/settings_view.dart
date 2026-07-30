@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'settings_controller.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/services/notification_service.dart';
 
 class SettingsView extends GetView<SettingsController> {
   SettingsView({super.key});
@@ -17,7 +16,7 @@ class SettingsView extends GetView<SettingsController> {
     'ba_bam.wav',
     'ba_ba_bam.wav',
     'chwarara.wav',
-    'silent'
+    'silent',
   ];
   final Map<String, String> soundLabels = {
     'ding_ding.mp3': '띠딩',
@@ -43,54 +42,75 @@ class SettingsView extends GetView<SettingsController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   const Text("타이머 설정", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 16),
-                   _buildSlider("집중 시간 (분)", controller.focusMinutes, 5, 60, divisions: 11),
-                   _buildSlider("휴식 시간 (분)", controller.restMinutes, 5, 30, divisions: 5),
-                   _buildSlider("반복 횟수 (사이클)", controller.repeatCount, 1, 10, divisions: 9),
-                   
-                   const SizedBox(height: 16),
-                   Obx(() => SwitchListTile(
-                     title: const Text("달빛 모드", style: TextStyle(fontWeight: FontWeight.bold)),
-                     subtitle: const Text("항상 켜져 있으며 1분간 터치가 없으면 어두운 화면으로 전환됩니다."),
-                     value: controller.ambientModeEnabled.value,
-                     onChanged: (val) {
-                       controller.ambientModeEnabled.value = val;
-                       controller.saveSilently();
-                     },
-                     activeThumbColor: AppColors.primary,
-                     contentPadding: EdgeInsets.zero,
-                   )),
-                   
-                   const SizedBox(height: 16),
-                   const Text("알림음 설정", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 8),
-                   _buildSoundDropdown("집중 완료 시", controller.focusEndSound),
-                   _buildSoundDropdown("휴식 완료 시", controller.restEndSound),
+                  const Text(
+                    "타이머 설정",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSlider(
+                    "집중 시간 (분)",
+                    controller.focusMinutes,
+                    5,
+                    60,
+                    divisions: 11,
+                  ),
+                  _buildSlider(
+                    "휴식 시간 (분)",
+                    controller.restMinutes,
+                    5,
+                    30,
+                    divisions: 5,
+                  ),
+                  _buildSlider(
+                    "반복 횟수 (사이클)",
+                    controller.repeatCount,
+                    1,
+                    10,
+                    divisions: 9,
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Text(
+                    "알림음 설정",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSoundDropdown("집중 완료 시", controller.focusEndSound),
+                  _buildSoundDropdown("휴식 완료 시", controller.restEndSound),
                 ],
               ),
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("카테고리 관리", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "카테고리 관리",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
-                  Obx(() => Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: controller.categories.map((category) => Chip(
-                      label: Text(category),
-                      backgroundColor: AppColors.secondary,
-                      onDeleted: () => controller.removeCategory(category),
-                    )).toList(),
-                  )),
+                  Obx(
+                    () => Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: controller.categories
+                          .map(
+                            (category) => Chip(
+                              label: Text(category),
+                              backgroundColor: AppColors.secondary,
+                              onDeleted: () =>
+                                  controller.removeCategory(category),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -100,10 +120,13 @@ class SettingsView extends GetView<SettingsController> {
                           decoration: const InputDecoration(
                             hintText: '새 카테고리 추가...',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                           ),
                           onSubmitted: (value) {
-                            if(value.trim().isNotEmpty) {
+                            if (value.trim().isNotEmpty) {
                               controller.addCategory(value.trim());
                               _textController.clear();
                             }
@@ -111,33 +134,80 @@ class SettingsView extends GetView<SettingsController> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
           ),
+
+          const SizedBox(height: 40),
+
+          // 관리자 모드 표시 (활성화된 경우만)
+          Obx(() {
+            if (!controller.isAdminMode.value) return const SizedBox.shrink();
+            return Center(
+              child: TextButton(
+                onPressed: () {
+                  Get.dialog(
+                    AlertDialog(
+                      title: const Text("일반 모드로 전환"),
+                      content: const Text("관리자 모드를 해제하고 일반 모드(광고 노출)로 전환하시겠습니까?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text("취소"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                            controller.resetAdminMode();
+                          },
+                          child: const Text(
+                            "전환",
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: const Text(
+                  "관리자 모드 활성 (탭하여 해제)",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildSlider(String label, RxInt rxValue, double min, double max, {int? divisions}) {
+  Widget _buildSlider(
+    String label,
+    RxInt rxValue,
+    double min,
+    double max, {
+    int? divisions,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Obx(() => Text("$label: ${rxValue.value}")),
-        Obx(() => Slider(
-          value: rxValue.value.toDouble(),
-          min: min,
-          max: max,
-          divisions: divisions,
-          activeColor: AppColors.primary,
-          inactiveColor: AppColors.primary.withOpacity(0.3),
-          onChanged: (val) {
-            rxValue.value = val.toInt();
-            controller.saveSilently();
-          },
-        )),
+        Obx(
+          () => Slider(
+            value: rxValue.value.toDouble(),
+            min: min,
+            max: max,
+            divisions: divisions,
+            activeColor: AppColors.primary,
+            inactiveColor: AppColors.primary.withOpacity(0.3),
+            onChanged: (val) {
+              rxValue.value = val.toInt();
+              controller.saveSilently();
+            },
+          ),
+        ),
       ],
     );
   }
@@ -147,26 +217,37 @@ class SettingsView extends GetView<SettingsController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textLight)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textLight,
+          ),
+        ),
         const SizedBox(height: 8),
         Obx(() {
           final List<DropdownMenuItem<String>> items = [];
-          
+
           for (var opt in soundOptions) {
-            items.add(DropdownMenuItem(value: opt, child: Text(soundLabels[opt]!)));
+            items.add(
+              DropdownMenuItem(value: opt, child: Text(soundLabels[opt]!)),
+            );
           }
 
           String currentValue = rxValue.value;
           if (!items.any((item) => item.value == currentValue)) {
             currentValue = 'ding_ding.mp3';
           }
-          
+
           return DropdownButtonFormField<String>(
             value: currentValue,
             isExpanded: true,
             decoration: const InputDecoration(
-              border: OutlineInputBorder(), 
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             items: items,
             onChanged: (val) {
@@ -178,7 +259,7 @@ class SettingsView extends GetView<SettingsController> {
             },
           );
         }),
-      ]
+      ],
     );
   }
 }

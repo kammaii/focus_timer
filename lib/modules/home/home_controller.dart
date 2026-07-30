@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../../core/services/ad_service.dart';
 import '../settings/settings_controller.dart';
 import '../records/records_controller.dart';
 import 'damagotchi_controller.dart';
@@ -22,19 +23,22 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   var selectedCategory = "".obs;
   var currentCycle = 1.obs;
   bool isTestMode = false;
-  
+
   // Ambient Mode
   var isAmbientMode = false.obs;
   Timer? _ambientTimer;
 
   Timer? _timer;
-  
+  Timer? _secretTitleTapResetTimer;
+  int _secretTitleTapCount = 0;
+
   // Audio Player for simple local sound
   final AudioPlayer _audioPlayer = AudioPlayer();
-  
+
   // Background tracking
   DateTime? _pausedTime;
   int _pausedRemainingSeconds = 0;
+  bool _isHandlingFinish = false;
 
   int get totalSeconds {
     if (currentState.value == TimerState.idle) {
@@ -49,15 +53,95 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     return p.clamp(0.0, 1.0);
   }
 
+  void handleTitleTap() {
+    if (currentState.value == TimerState.rest) {
+      _resetSecretTitleTapCount();
+      return;
+    }
+
+    _secretTitleTapResetTimer?.cancel();
+    _secretTitleTapCount++;
+
+    if (_secretTitleTapCount >= 10) {
+      _resetSecretTitleTapCount();
+      _showAdDisablePasswordDialog();
+      return;
+    }
+
+    _secretTitleTapResetTimer = Timer(
+      const Duration(seconds: 2),
+      _resetSecretTitleTapCount,
+    );
+  }
+
+  void _resetSecretTitleTapCount() {
+    _secretTitleTapResetTimer?.cancel();
+    _secretTitleTapResetTimer = null;
+    _secretTitleTapCount = 0;
+  }
+
+  void _showAdDisablePasswordDialog() {
+    final passwordController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text("비밀번호를 입력하세요"),
+        content: TextField(
+          controller: passwordController,
+          autofocus: true,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submitAdDisablePassword(passwordController),
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: const Text("취소"),
+          ),
+          TextButton(
+            onPressed: () => _submitAdDisablePassword(passwordController),
+            child: const Text("확인"),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    ).whenComplete(passwordController.dispose);
+  }
+
+  Future<void> _submitAdDisablePassword(
+    TextEditingController passwordController,
+  ) async {
+    if (passwordController.text.trim() != "1009") {
+      Get.snackbar(
+        "오류",
+        "비밀번호가 올바르지 않습니다.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    await AdService().disableAdsForDevice();
+    if (Get.isDialogOpen ?? false) Get.back();
+    Get.snackbar(
+      "설정 완료",
+      "이 기기에서는 광고가 표시되지 않습니다.",
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Default config update trigger
     ever(settings.focusMinutes, (_) => _resetTimer());
     _resetTimer();
-    
+
     // Set default category
     if (settings.categories.isNotEmpty) {
       selectedCategory.value = settings.categories.first;
@@ -65,16 +149,6 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     ever(settings.categories, (List<String> cats) {
       if (cats.isNotEmpty && !cats.contains(selectedCategory.value)) {
         selectedCategory.value = cats.first;
-      }
-    });
-
-    ever(settings.ambientModeEnabled, (bool enabled) {
-      if (!enabled) {
-        isAmbientMode.value = false;
-        _ambientTimer?.cancel();
-        WakelockPlus.disable();
-      } else if (currentState.value != TimerState.idle && !isPaused.value) {
-        resetAmbientTimer();
       }
     });
   }
@@ -134,7 +208,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     } else if (filename == 'rest_end.wav') {
       filename = 'ding_ring.mp3';
     }
-    
+
     try {
       await _audioPlayer.play(AssetSource('sounds/$filename'));
     } catch (e) {
@@ -143,39 +217,57 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   }
 
   void _onTimeFinished() async {
+    if (_isHandlingFinish) return;
+    _isHandlingFinish = true;
+
     final finishedState = currentState.value;
     if (finishedState == TimerState.focus) {
       // Save record
-      records.addRecord(settings.focusMinutes.value * 60, selectedCategory.value);
-      
+      records.addRecord(
+        settings.focusMinutes.value * 60,
+        selectedCategory.value,
+      );
+
       _playSound(settings.focusEndSound.value, finishedState);
 
       // Damagotchi 다이얼로그 띄우고 보상 기다리기 (타이머는 일시정지 상태처럼 대기)
       final damagotchiController = Get.find<DamagotchiController>();
       int baseExp = settings.focusMinutes.value; // 집중한 시간(분)만큼 경험치 획득
-      int finalExp = await damagotchiController.showExpProgressAndGetReward(baseExp);
-      
+      int finalExp = await damagotchiController.showExpProgressAndGetReward(
+        baseExp,
+      );
+
       // 실제 반영
       await damagotchiController.gainExpAfterReward(finalExp);
-      
+
       if (currentCycle.value < (isTestMode ? 2 : settings.repeatCount.value)) {
+        _isHandlingFinish = false; // 상태 전이 전 플래그 해제
         startRest();
       } else {
+        _isHandlingFinish = false; // 상태 전이 전 플래그 해제
         stopTimer(showReward: false); // 이미 보상을 받았으므로 보상 팝업 제외
         currentCycle.value = 1;
-        Get.snackbar("완료!", "모든 집중 사이클을 완료했습니다! 🎉", snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          "완료!",
+          "모든 집중 사이클을 완료했습니다! 🎉",
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } else if (finishedState == TimerState.rest) {
       _playSound(settings.restEndSound.value, finishedState);
       currentCycle.value++;
+      _isHandlingFinish = false; // 플래그 해제
       startFocus();
+    } else {
+      _isHandlingFinish = false;
     }
     resetAmbientTimer();
   }
 
   void stopTimer({bool showReward = true}) async {
     // 1. Calculate elapsed focus time before resetting
-    final int elapsedSeconds = currentTotalSeconds.value - remainingSeconds.value;
+    final int elapsedSeconds =
+        currentTotalSeconds.value - remainingSeconds.value;
     final bool wasFocus = currentState.value == TimerState.focus;
     final String category = selectedCategory.value;
 
@@ -194,17 +286,19 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     // 4. Handle partial reward if conditions met (min 1 minute)
     if (showReward && wasFocus && elapsedSeconds >= 60) {
       int focusMinutes = elapsedSeconds ~/ 60;
-      
+
       // Save partial record
       records.addRecord(elapsedSeconds, category);
-      
+
       // Play sound
       _playSound(settings.focusEndSound.value, TimerState.focus);
 
       // Show XP Progress Dialog
       final damagotchiController = Get.find<DamagotchiController>();
-      int finalExp = await damagotchiController.showExpProgressAndGetReward(focusMinutes);
-      
+      int finalExp = await damagotchiController.showExpProgressAndGetReward(
+        focusMinutes,
+      );
+
       // Apply reward
       await damagotchiController.gainExpAfterReward(finalExp);
     }
@@ -214,7 +308,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     currentTotalSeconds.value = 0;
     _resetTimer();
   }
-  
+
   void pauseTimer() {
     if (currentState.value != TimerState.idle && !isPaused.value) {
       isPaused.value = true;
@@ -233,7 +327,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       resetAmbientTimer();
     }
   }
-  
+
   void skipRest() {
     if (currentState.value == TimerState.rest) {
       _timer?.cancel();
@@ -254,8 +348,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void resetAmbientTimer() {
     isAmbientMode.value = false;
     _ambientTimer?.cancel();
-    
-    if (settings.ambientModeEnabled.value && currentState.value != TimerState.idle && !isPaused.value) {
+
+    if (currentState.value != TimerState.idle && !isPaused.value) {
       WakelockPlus.enable();
       _ambientTimer = Timer(const Duration(minutes: 1), () {
         isAmbientMode.value = true;
@@ -287,11 +381,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _pausedTime = DateTime.now();
       _pausedRemainingSeconds = remainingSeconds.value;
     } else if (state == AppLifecycleState.resumed) {
-      if (_pausedTime != null && currentState.value != TimerState.idle && !isPaused.value) {
+      if (_pausedTime != null &&
+          currentState.value != TimerState.idle &&
+          !isPaused.value) {
         final elapsed = DateTime.now().difference(_pausedTime!).inSeconds;
         int newRemaining = _pausedRemainingSeconds - elapsed;
         if (newRemaining <= 0) {
@@ -314,6 +411,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _ambientTimer?.cancel();
+    _secretTitleTapResetTimer?.cancel();
     _audioPlayer.dispose();
     WakelockPlus.disable();
     super.onClose();

@@ -1,4 +1,4 @@
-package com.example.focus_timer
+package com.podokorean.focus_timer
 
 import io.flutter.embedding.android.FlutterActivity
 

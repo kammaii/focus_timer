@@ -315,70 +315,72 @@ class _NewEggDialogState extends State<NewEggDialog> {
   }
 
   void _selectEgg(AnimalGrade grade) async {
-    await AdService().showRewardedAd(
-      onRewardEarned: () async {
-        final controller = Get.find<DamagotchiController>();
+    if (grade == AnimalGrade.special) {
+      final rewardEarned = await AdService().showRewardedAd(
+        onRewardEarned: () {},
+      );
 
-        final random = Random();
-        AnimalType selectedType;
+      if (!rewardEarned) return;
+    }
 
-        if (grade == AnimalGrade.normal) {
-          final normalTypes = [
-            AnimalType.rabbit,
-            AnimalType.cat,
-            AnimalType.squirrel,
-            AnimalType.hedgehog,
-          ];
-          final uncollectedNormalTypes = normalTypes.where((type) {
-            final inCollection = controller.collection.any(
-              (animal) => animal.type == type,
-            );
-            final isCurrent = controller.currentAnimal.value?.type == type;
-            return !inCollection && !isCurrent;
-          }).toList();
-          if (uncollectedNormalTypes.isEmpty) {
-            Get.snackbar("알림", "모든 일반 동물을 수집했습니다.");
-            return;
-          }
-          selectedType =
-              uncollectedNormalTypes[random.nextInt(
-                uncollectedNormalTypes.length,
-              )];
-        } else {
-          final specialTypes = [
-            AnimalType.dog,
-            AnimalType.turtle,
-            AnimalType.tiger,
-            AnimalType.lion,
-            AnimalType.bear,
-            AnimalType.dinosaur,
-          ];
-          final uncollectedSpecialTypes = specialTypes.where((type) {
-            final inCollection = controller.collection.any(
-              (animal) => animal.type == type,
-            );
-            final isCurrent = controller.currentAnimal.value?.type == type;
-            return !inCollection && !isCurrent;
-          }).toList();
-          if (uncollectedSpecialTypes.isEmpty) {
-            Get.snackbar("알림", "모든 스페셜 동물을 수집했습니다.");
-            return;
-          }
-          selectedType =
-              uncollectedSpecialTypes[random.nextInt(
-                uncollectedSpecialTypes.length,
-              )];
-        }
+    final controller = Get.find<DamagotchiController>();
 
-        await controller.acquireNewEgg(selectedType, grade);
+    final random = Random();
+    AnimalType selectedType;
 
-        if (Get.isDialogOpen ?? false) Get.back();
-        Get.snackbar(
-          "새 알 획득!",
-          "새로운 알을 얻었습니다. 열심히 집중해서 키워보세요!",
-          snackPosition: SnackPosition.TOP,
+    if (grade == AnimalGrade.normal) {
+      final normalTypes = [
+        AnimalType.rabbit,
+        AnimalType.cat,
+        AnimalType.squirrel,
+        AnimalType.hedgehog,
+      ];
+      final uncollectedNormalTypes = normalTypes.where((type) {
+        final inCollection = controller.collection.any(
+          (animal) => animal.type == type,
         );
-      },
+        final isCurrent = controller.currentAnimal.value?.type == type;
+        return !inCollection && !isCurrent;
+      }).toList();
+      if (uncollectedNormalTypes.isEmpty) {
+        Get.snackbar("알림", "모든 일반 동물을 수집했습니다.");
+        return;
+      }
+      selectedType =
+          uncollectedNormalTypes[random.nextInt(uncollectedNormalTypes.length)];
+    } else {
+      final specialTypes = [
+        AnimalType.dog,
+        AnimalType.turtle,
+        AnimalType.tiger,
+        AnimalType.lion,
+        AnimalType.bear,
+        AnimalType.dinosaur,
+      ];
+      final uncollectedSpecialTypes = specialTypes.where((type) {
+        final inCollection = controller.collection.any(
+          (animal) => animal.type == type,
+        );
+        final isCurrent = controller.currentAnimal.value?.type == type;
+        return !inCollection && !isCurrent;
+      }).toList();
+      if (uncollectedSpecialTypes.isEmpty) {
+        Get.snackbar("알림", "모든 스페셜 동물을 수집했습니다.");
+        return;
+      }
+      selectedType =
+          uncollectedSpecialTypes[random.nextInt(
+            uncollectedSpecialTypes.length,
+          )];
+    }
+
+    await controller.acquireNewEgg(selectedType, grade);
+
+    if (Get.isDialogOpen ?? false) Get.back();
+    Get.snackbar(
+      "새 알 획득!",
+      "새로운 알을 얻었습니다. 열심히 집중해서 키워보세요!",
+      snackPosition: SnackPosition.TOP,
     );
   }
 }

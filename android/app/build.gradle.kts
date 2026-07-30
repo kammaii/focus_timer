@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.focus_timer"
+    namespace = "com.podokorean.focus_timer"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,17 +22,20 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.focus_timer"
+        applicationId = "com.podokorean.focus_timer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["adMobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {
         release {
+            // TODO: Replace with the real AdMob app ID before publishing.
+            manifestPlaceholders["adMobApplicationId"] = "ca-app-pub-4839718329129134~5716753349"
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
